@@ -81,13 +81,13 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white text-black py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
         <div className="text-center">
           <h1 className="text-3xl font-bold mb-2">
             YouTube 音频提取器
           </h1>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-gray-600">
             输入YouTube视频链接，一键提取并下载音频
           </p>
         </div>
@@ -99,13 +99,13 @@ export default function Home() {
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="paste the link here"
-              className="flex-1 px-4 py-2 rounded-md border border-gray-700 bg-gray-900 text-white focus:ring-1 focus:ring-gray-400 focus:outline-none"
+              className="flex-1 px-4 py-2 rounded-md border border-black bg-white text-black focus:ring-1 focus:ring-black focus:outline-none"
               required
             />
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-white text-black rounded-md hover:bg-gray-200 focus:outline-none disabled:opacity-50 transition-colors duration-200 font-medium"
+              className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 focus:outline-none disabled:opacity-50 transition-colors duration-200 font-medium"
             >
               {loading ? '处理中...' : '提取音频'}
             </button>
@@ -115,26 +115,26 @@ export default function Home() {
         {/* 添加进度条 */}
         {loading && (
           <div className="mt-6">
-            <div className="w-full bg-gray-800 rounded-full h-1.5 mb-2">
+            <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2">
               <div 
-                className="bg-white h-1.5 rounded-full transition-all duration-300 ease-in-out" 
+                className="bg-blue-600 h-1.5 rounded-full transition-all duration-300 ease-in-out" 
                 style={{ width: `${progress}%` }}
               ></div>
             </div>
-            <p className="text-xs text-gray-400 text-center">
+            <p className="text-xs text-gray-500 text-center">
               {progress === 0 ? '准备中...' : `处理进度: ${progress}%`}
             </p>
           </div>
         )}
 
         {error && (
-          <div className="mt-6 p-3 bg-gray-900 border border-red-800 rounded-md">
-            <p className="text-red-400 text-sm">{error}</p>
+          <div className="mt-6 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-red-600 text-sm">{error}</p>
           </div>
         )}
 
         {audioInfo && (
-          <div className="mt-8 bg-gray-900 rounded-md border border-gray-800 p-4">
+          <div className="mt-8 bg-white rounded-md border border-gray-200 shadow-md p-4">
             <div className="flex items-start gap-4">
               <div className="w-32 h-32 relative flex-shrink-0">
                 <Image
@@ -145,15 +145,15 @@ export default function Home() {
                 />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-medium text-white mb-1">
+                <h3 className="text-lg font-medium text-black mb-1">
                   {audioInfo.title}
                 </h3>
-                <p className="text-sm text-gray-400 mb-3">
+                <p className="text-sm text-gray-600 mb-3">
                   时长: {Math.floor(Number(audioInfo.duration) / 60)}分{Number(audioInfo.duration) % 60}秒
                 </p>
                 <button
                   onClick={handleDownload}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-white text-black rounded-md hover:bg-gray-200 focus:outline-none transition-colors duration-200 text-sm font-medium"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none transition-colors duration-200 text-sm font-medium"
                 >
                   <ArrowDownTrayIcon className="w-4 h-4" />
                   下载MP3
