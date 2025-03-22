@@ -10,11 +10,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'URL is required' }, { status: 400 });
     }
 
-    // 使用yt-dlp下载音频，添加cookies参数解决人机验证问题
+    // 使用yt-dlp下载音频，使用cookie.txt文件解决人机验证问题
     const ytDlp = spawn('yt-dlp', [
       '-f', 'bestaudio',
       '-o', '-',  // 输出到stdout
-      '--cookies-from-browser', 'chrome',
+      '--cookies', 'public/cookie.txt',
       url
     ]);
 

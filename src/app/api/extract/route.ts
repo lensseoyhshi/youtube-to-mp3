@@ -43,7 +43,7 @@ export async function GET(request: Request) {
       await sendProgress(writer, 10);
 
       // 获取视频信息
-      const { stdout } = await execAsync(`yt-dlp -j --cookies-from-browser chrome ${url}`);
+      const { stdout } = await execAsync(`yt-dlp -j --cookies public/cookie.txt ${url}`);
       const info = JSON.parse(stdout);
       await sendProgress(writer, 30);
 
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
       const ytDlp = spawn('yt-dlp', [
         '-f', 'bestaudio',
         '-g',
-        '--cookies-from-browser', 'chrome',
+        '--cookies', 'public/cookie.txt',
         url
       ]);
 
@@ -100,15 +100,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'URL is required' }, { status: 400 });
     }
 
-    // 使用yt-dlp获取视频信息，添加cookies参数解决人机验证问题
-    const { stdout } = await execAsync(`yt-dlp -j --cookies-from-browser chrome ${url}`);
+    // 使用yt-dlp获取视频信息，使用cookie.txt文件解决人机验证问题
+    const { stdout } = await execAsync(`yt-dlp -j --cookies public/cookie.txt ${url}`);
     const info = JSON.parse(stdout);
 
-    // 获取音频URL，添加cookies参数解决人机验证问题
+    // 获取音频URL，使用cookie.txt文件解决人机验证问题
     const ytDlp = spawn('yt-dlp', [
       '-f', 'bestaudio',
       '-g',  // 获取直接下载URL
-      '--cookies-from-browser', 'chrome',
+      '--cookies', 'public/cookie.txt',
       url
     ]);
 
