@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
     // 获取视频信息
     const info = await ytdl.getInfo(url);
-    const audioFormat = ytdl.chooseFormat(info.formats, { quality: 'highestaudio' });
+    const audioFormat = ytdl.chooseFormat(info.formats, { quality: 'highestaudio'  ,filter: 'audioonly'});
 
     // 返回音频流URL和视频信息
     return NextResponse.json({
