@@ -1,10 +1,24 @@
 import { NextResponse } from 'next/server';
-import { spawn } from 'child_process';
-import { promisify } from 'util';
-import { exec } from 'child_process';
 import { TransformStream } from 'stream/web';
+import ytdl from 'ytdl-core';
 
-const execAsync = promisify(exec);
+// 获取视频信息的辅助函数
+async function getVideoInfo(url: string) {
+  try {
+    const info = await ytdl.getInfo(url);
+    const audioFormat = ytdl.chooseFormat(info.formats, { quality: 'highestaudio' });
+    
+    return {
+      title: info.videoDetails.title,
+      thumbnail: info.videoDetails.thumbnails[info.videoDetails.thumbnails.length - 1].url,
+      duration: parseInt(info.videoDetails.lengthSeconds),
+      audioUrl: audioFormat.url
+    };
+  } catch (error) {
+    console.error('Error getting video info:', error);
+    throw error;
+  }
+}
 
 // GET方法处理SSE连接，提供实时进度更新
 export async function GET(request: Request) {
@@ -42,35 +56,21 @@ export async function GET(request: Request) {
       // 发送初始进度
       await sendProgress(writer, 10);
 
-      // 获取视频信息
-      const { stdout } = await execAsync(`yt-dlp -j --cookies-from-browser chrome ${url}`);
-      const info = JSON.parse(stdout);
+      // 验证URL是否有效
+      if (!ytdl.validateURL(url)) {
+        throw new Error('无效的YouTube URL');
+      }
       await sendProgress(writer, 30);
 
-      // 获取音频URL
-      const ytDlp = spawn('yt-dlp', [
-        '-f', 'bestaudio',
-        '-g',
-        '--cookies-from-browser', 'chrome',
-        url
-      ]);
-
-      let audioUrl = '';
-      for await (const data of ytDlp.stdout) {
-        audioUrl += data.toString();
-        await sendProgress(writer, 60);
-      }
+      // 获取视频信息和音频URL
+      const info = await getVideoInfo(url);
+      await sendProgress(writer, 60);
 
       // 处理完成，发送100%进度和结果
       await sendProgress(writer, 100);
       
       // 发送完成信息和音频数据
-      await sendComplete(writer, {
-        title: info.title,
-        thumbnail: info.thumbnail,
-        duration: info.duration,
-        audioUrl: audioUrl.trim()
-      });
+      await sendComplete(writer, info);
     } catch (error) {
       console.error('Error extracting audio:', error);
       const errorData = JSON.stringify({ error: 'Failed to extract audio' });
@@ -100,30 +100,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'URL is required' }, { status: 400 });
     }
 
-    // 使用yt-dlp获取视频信息，添加cookies参数解决人机验证问题
-    const { stdout } = await execAsync(`yt-dlp -j --cookies-from-browser chrome ${url}`);
-    const info = JSON.parse(stdout);
-
-    // 获取音频URL，添加cookies参数解决人机验证问题
-    const ytDlp = spawn('yt-dlp', [
-      '-f', 'bestaudio',
-      '-g',  // 获取直接下载URL
-      '--cookies-from-browser', 'chrome',
-      url
-    ]);
-
-    let audioUrl = '';
-    for await (const data of ytDlp.stdout) {
-      audioUrl += data.toString();
+    // 验证URL是否有效
+    if (!ytdl.validateURL(url)) {
+      return NextResponse.json({ error: '无效的YouTube URL' }, { status: 400 });
     }
 
+    // 使用ytdl-core获取视频信息和音频URL
+    const info = await getVideoInfo(url);
+
     // 返回视频信息和音频URL
-    return NextResponse.json({
-      title: info.title,
-      thumbnail: info.thumbnail,
-      duration: info.duration,
-      audioUrl: audioUrl.trim()
-    })
+    return NextResponse.json(info)
   } catch (error) {
     console.error('Error extracting audio:', error);
     return NextResponse.json(

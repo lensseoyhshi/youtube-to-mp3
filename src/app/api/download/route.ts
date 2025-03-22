@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { spawn } from 'child_process';
+import ytdl from 'ytdl-core';
 import { Readable } from 'stream';
 
 export async function POST(request: Request) {
@@ -10,32 +10,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'URL is required' }, { status: 400 });
     }
 
-    // 使用yt-dlp下载音频，添加cookies参数解决人机验证问题
-    const ytDlp = spawn('yt-dlp', [
-      '-f', 'bestaudio',
-      '-o', '-',  // 输出到stdout
-      '--cookies-from-browser', 'chrome',
-      url
-    ]);
-
+    // 验证URL是否有效
+    if (!ytdl.validateURL(url)) {
+      return NextResponse.json({ error: '无效的YouTube URL' }, { status: 400 });
+    }
+    
+    // 使用ytdl-core下载音频
+    const audioStream = ytdl(url, { 
+      quality: 'highestaudio',
+      filter: 'audioonly'
+    });
+    
     // 创建一个可读流
     const stream = new Readable({
       read() {
         // 实现read方法
       }
     });
-
-    // 处理yt-dlp输出
-    ytDlp.stdout.on('data', (chunk) => {
+    
+    // 处理ytdl-core输出
+    audioStream.on('data', (chunk) => {
       stream.push(chunk);
     });
-
-    ytDlp.stdout.on('end', () => {
+    
+    audioStream.on('end', () => {
       stream.push(null);
     });
-
-    ytDlp.stderr.on('data', (data) => {
-      console.error(`yt-dlp error: ${data}`);
+    
+    audioStream.on('error', (error) => {
+      console.error(`ytdl-core error: ${error}`);
     });
 
     // 设置响应头
