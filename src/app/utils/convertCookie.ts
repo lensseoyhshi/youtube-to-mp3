@@ -44,7 +44,7 @@ export async function convertCookieToNetscape(cookieFilePath: string = 'public/c
             netscapeCookieContent += `.youtube.com\tTRUE\t/\tFALSE\t2147483647\t${name}\t${value}\n`;
           }
         }
-      } catch (e) {
+      } catch {
         // 2. 如果不是JSON格式，尝试解析为字符串格式（如name=value; name2=value2）
         const cookies = cookieContent.split(';').filter(cookie => cookie.trim());
         

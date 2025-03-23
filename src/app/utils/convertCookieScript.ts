@@ -1,7 +1,7 @@
 /**
  * 脚本：将cookie文件转换为Netscape格式并替换原有cookie文件
  */
-import { convertCookieToNetscape, replaceCookieWithNetscape } from './convertCookie';
+import { replaceCookieWithNetscape } from './convertCookie';
 
 // 执行转换并替换操作
 async function main() {
