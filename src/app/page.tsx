@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 
@@ -15,6 +15,12 @@ export default function Home() {
     thumbnail: string;
     duration: string;
   } | null>(null);
+  const [cookieStr, setCookieStr] = useState('');  // 添加cookie状态
+  
+  // 获取浏览器cookie
+  useEffect(() => {
+    setCookieStr(document.cookie);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,8 +30,11 @@ export default function Home() {
     setProgress(0); // 重置进度
 
     try {
-      // 创建事件源来接收进度更新
-      const eventSource = new EventSource(`/api/extract?url=${encodeURIComponent(url)}`);
+      // 更新cookie状态
+      setCookieStr(document.cookie);
+      
+      // 创建事件源来接收进度更新，传递cookie参数
+      const eventSource = new EventSource(`/api/extract?url=${encodeURIComponent(url)}&cookie=${encodeURIComponent(cookieStr)}`);
       
       eventSource.onmessage = (event) => {
         const data = JSON.parse(event.data);
@@ -55,10 +64,13 @@ export default function Home() {
 
   const handleDownload = async () => {
     try {
+      // 更新cookie状态
+      setCookieStr(document.cookie);
+      
       const response = await fetch('/api/download', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
+        body: JSON.stringify({ url, cookie: cookieStr })
       });
 
       if (!response.ok) {

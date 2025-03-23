@@ -3,6 +3,7 @@ import { spawn } from 'child_process';
 import { promisify } from 'util';
 import { exec } from 'child_process';
 import { TransformStream } from 'stream/web';
+import { writeCookieToTempFile, cleanupTempCookieFile } from '../../utils/cookie';
 
 const execAsync = promisify(exec);
 
@@ -10,6 +11,7 @@ const execAsync = promisify(exec);
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const url = searchParams.get('url');
+  const cookieStr = searchParams.get('cookie') || '';
 
   if (!url) {
     return NextResponse.json({ error: 'URL is required' }, { status: 400 });
@@ -38,12 +40,22 @@ export async function GET(request: Request) {
   // 在后台处理视频提取
   const processVideo = async () => {
     const writer = writable.getWriter();
+    let cookiePath = '';
+    
     try {
       // 发送初始进度
       await sendProgress(writer, 10);
+      
+      // 如果有cookie，写入临时文件
+      if (cookieStr) {
+        cookiePath = await writeCookieToTempFile(cookieStr);
+      }
+      
+      // 使用cookie路径或默认cookie文件
+      const cookieOption = cookiePath || 'public/cookie';
 
       // 获取视频信息
-      const { stdout } = await execAsync(`yt-dlp -j --cookies public/cookie.txt ${url}`);
+      const { stdout } = await execAsync(`yt-dlp -j --cookies ${cookieOption} ${url}`);
       const info = JSON.parse(stdout);
       await sendProgress(writer, 30);
 
@@ -51,7 +63,7 @@ export async function GET(request: Request) {
       const ytDlp = spawn('yt-dlp', [
         '-f', 'bestaudio',
         '-g',
-        '--cookies', 'public/cookie.txt',
+        '--cookies', cookieOption,
         url
       ]);
 
@@ -76,6 +88,11 @@ export async function GET(request: Request) {
       const errorData = JSON.stringify({ error: 'Failed to extract audio' });
       await writer.write(encoder.encode(`data: ${errorData}\n\n`));
       await writer.close();
+    } finally {
+      // 清理临时cookie文件
+      if (cookiePath) {
+        await cleanupTempCookieFile(cookiePath);
+      }
     }
   };
 
@@ -93,22 +110,32 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  let cookiePath = '';
+  
   try {
-    const { url } = await request.json();
+    const { url, cookie } = await request.json();
 
     if (!url) {
       return NextResponse.json({ error: 'URL is required' }, { status: 400 });
     }
+    
+    // 如果有cookie，写入临时文件
+    if (cookie) {
+      cookiePath = await writeCookieToTempFile(cookie);
+    }
+    
+    // 使用cookie路径或默认cookie文件
+    const cookieOption = cookiePath || 'public/cookie.txt';
 
-    // 使用yt-dlp获取视频信息，使用cookie.txt文件解决人机验证问题
-    const { stdout } = await execAsync(`yt-dlp -j --cookies public/cookie.txt ${url}`);
+    // 使用yt-dlp获取视频信息
+    const { stdout } = await execAsync(`yt-dlp -j --cookies ${cookieOption} ${url}`);
     const info = JSON.parse(stdout);
 
-    // 获取音频URL，使用cookie.txt文件解决人机验证问题
+    // 获取音频URL
     const ytDlp = spawn('yt-dlp', [
       '-f', 'bestaudio',
       '-g',  // 获取直接下载URL
-      '--cookies', 'public/cookie.txt',
+      '--cookies', cookieOption,
       url
     ]);
 
@@ -130,5 +157,10 @@ export async function POST(request: Request) {
       { error: 'Failed to extract audio' },
       { status: 500 }
     );
+  } finally {
+    // 清理临时cookie文件
+    if (cookiePath) {
+      await cleanupTempCookieFile(cookiePath);
+    }
   }
 }
