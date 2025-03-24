@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 
+const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export default function Home() {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -12,8 +14,6 @@ export default function Home() {
   const [audioInfo, setAudioInfo] = useState<{
     audioUrl: string;
     title: string;
-    thumbnail: string;
-    duration: string;
   } | null>(null);
   const [cookieStr, setCookieStr] = useState('');  // 添加cookie状态
   
@@ -27,66 +27,46 @@ export default function Home() {
     setLoading(true);
     setError('');
     setAudioInfo(null);
-    setProgress(0); // 重置进度
+    setProgress(0);
 
     try {
-      // 更新cookie状态
-      setCookieStr(document.cookie);
-      
-      // 创建事件源来接收进度更新，传递cookie参数
-      const eventSource = new EventSource(`/api/extract?url=${encodeURIComponent(url)}&cookie=${encodeURIComponent(cookieStr)}`);
-      
-      eventSource.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.progress) {
-          setProgress(data.progress);
-        }
-        
-        if (data.complete) {
-          setAudioInfo(data.info);
-          eventSource.close();
-          setLoading(false);
-        }
-      };
-      
-      eventSource.onerror = (error) => {
-        console.error('EventSource error:', error);
-        eventSource.close();
-        setError('提取音频时发生错误');
-        setLoading(false);
-      };
+      const response = await fetch(`${baseURL}/api/convert`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url })
+      });
 
+      if (!response.ok) {
+        throw new Error('转换失败');
+      }
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || '转换失败');
+      }
+
+      setAudioInfo({
+        audioUrl: data.downloadUrl,
+        title: data.title,
+      });
+      setLoading(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '提取音频时发生错误');
+      setError(err instanceof Error ? err.message : '转换音频时发生错误');
       setLoading(false);
     }
   };
 
   const handleDownload = async () => {
     try {
-      // 更新cookie状态
-      setCookieStr(document.cookie);
-      
-      const response = await fetch('/api/download', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, cookie: cookieStr })
-      });
-
-      if (!response.ok) {
-        throw new Error('下载失败');
+      if (!audioInfo?.audioUrl) {
+        throw new Error('音频地址不存在');
       }
 
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
+      // 直接使用 downloadUrl 进行下载
+      window.location.href = `${baseURL}${audioInfo.audioUrl}`;
       
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = `${audioInfo?.title}.mp3`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(downloadUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : '下载音频时发生错误');
     }
@@ -148,21 +128,10 @@ export default function Home() {
         {audioInfo && (
           <div className="mt-8 bg-white rounded-md border border-gray-200 shadow-md p-4">
             <div className="flex items-start gap-4">
-              <div className="w-32 h-32 relative flex-shrink-0">
-                <Image
-                  src={audioInfo.thumbnail}
-                  alt={audioInfo.title}
-                  fill
-                  className="rounded-md object-cover"
-                />
-              </div>
               <div className="flex-1">
-                <h3 className="text-lg font-medium text-black mb-1">
+                <h3 className="text-lg font-medium text-black mb-3">
                   {audioInfo.title}
                 </h3>
-                <p className="text-sm text-gray-600 mb-3">
-                  时长: {Math.floor(Number(audioInfo.duration) / 60)}分{Number(audioInfo.duration) % 60}秒
-                </p>
                 <button
                   onClick={handleDownload}
                   className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none transition-colors duration-200 text-sm font-medium"
