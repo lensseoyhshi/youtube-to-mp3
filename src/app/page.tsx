@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 
-const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
 export default function Home() {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,9 +12,11 @@ export default function Home() {
   const [audioInfo, setAudioInfo] = useState<{
     audioUrl: string;
     title: string;
+    thumbnail: string;
+    duration: string;
   } | null>(null);
   const [cookieStr, setCookieStr] = useState('');  // 添加cookie状态
-  
+
   // 获取浏览器cookie
   useEffect(() => {
     setCookieStr(document.cookie);
@@ -27,123 +27,192 @@ export default function Home() {
     setLoading(true);
     setError('');
     setAudioInfo(null);
-    setProgress(0);
+    setProgress(0); // 重置进度
 
     try {
-      const response = await fetch(`${baseURL}/api/convert`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url })
-      });
+      // 更新cookie状态
+      setCookieStr(document.cookie);
 
-      if (!response.ok) {
-        throw new Error('转换失败');
-      }
+      // 创建事件源来接收进度更新，传递cookie参数
+      const eventSource = new EventSource(`/api/extract?url=${encodeURIComponent(url)}&cookie=${encodeURIComponent(cookieStr)}`);
 
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.error || '转换失败');
-      }
+      eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.progress) {
+          setProgress(data.progress);
+        }
 
-      setAudioInfo({
-        audioUrl: data.downloadUrl,
-        title: data.title,
-      });
-      setLoading(false);
+        if (data.complete) {
+          setAudioInfo(data.info);
+          eventSource.close();
+          setLoading(false);
+        }
+      };
+
+      eventSource.onerror = (error) => {
+        console.error('EventSource error:', error);
+        eventSource.close();
+        setError('提取音频时发生错误');
+        setLoading(false);
+      };
+
     } catch (err) {
-      setError(err instanceof Error ? err.message : '转换音频时发生错误');
+      setError(err instanceof Error ? err.message : '提取音频时发生错误');
       setLoading(false);
     }
   };
 
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null); // 添加下载URL状态
+
   const handleDownload = async () => {
     try {
-      if (!audioInfo?.audioUrl) {
-        throw new Error('音频地址不存在');
+      setCookieStr(document.cookie);
+  
+      // 1. 先从YouTube下载MP3
+      const response = await fetch('/api/download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, cookie: cookieStr })
+      });
+  
+      if (!response.ok) {
+        throw new Error('下载失败');
       }
-
-      // 直接使用 downloadUrl 进行下载
-      window.location.href = `${baseURL}${audioInfo.audioUrl}`;
+  
+      const blob = await response.blob();
+  
+      // 2. 创建FormData对象用于上传
+      const formData = new FormData();
+      const fileName = `${audioInfo?.title}.mp3`;
+      formData.append('file', blob, fileName);
+      formData.append('title', audioInfo?.title || '');
+  
+      // 3. 上传到后端
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+  
+      if (!uploadResponse.ok) {
+        throw new Error('上传失败');
+      }
+  
+      const uploadResult = await uploadResponse.json();
       
+      if (uploadResult.success) {
+        setDownloadUrl(uploadResult.downloadUrl);
+        
+        // 4. 使用后端返回的下载链接进行下载
+        const link = document.createElement('a');
+        link.href = uploadResult.downloadUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        throw new Error(uploadResult.error || '上传处理失败');
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '下载音频时发生错误');
+      setError(err instanceof Error ? err.message : '下载或上传音频时发生错误');
     }
   };
 
   return (
-    <div className="min-h-screen bg-white text-black py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold mb-2">
-            YouTube 音频提取器
-          </h1>
-          <p className="text-sm text-gray-600">
-            输入YouTube视频链接，一键提取并下载音频
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="mt-8">
-          <div className="flex gap-2 flex-col sm:flex-row">
-            <input
-              type="text"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="paste the link here"
-              className="flex-1 px-4 py-2 rounded-md border border-black bg-white text-black focus:ring-1 focus:ring-black focus:outline-none"
-              required
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 focus:outline-none disabled:opacity-50 transition-colors duration-200 font-medium"
-            >
-              {loading ? '处理中...' : '提取音频'}
-            </button>
-          </div>
-        </form>
-
-        {/* 添加进度条 */}
-        {loading && (
-          <div className="mt-6">
-            <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2">
-              <div 
-                className="bg-blue-600 h-1.5 rounded-full transition-all duration-300 ease-in-out" 
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
-            <p className="text-xs text-gray-500 text-center">
-              {progress === 0 ? '准备中...' : `处理进度: ${progress}%`}
+      <div className="min-h-screen bg-white text-black py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold mb-2">
+              YouTube 音频提取器
+            </h1>
+            <p className="text-sm text-gray-600">
+              输入YouTube视频链接，一键提取并下载音频
             </p>
           </div>
-        )}
 
-        {error && (
-          <div className="mt-6 p-3 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-red-600 text-sm">{error}</p>
-          </div>
-        )}
-
-        {audioInfo && (
-          <div className="mt-8 bg-white rounded-md border border-gray-200 shadow-md p-4">
-            <div className="flex items-start gap-4">
-              <div className="flex-1">
-                <h3 className="text-lg font-medium text-black mb-3">
-                  {audioInfo.title}
-                </h3>
-                <button
-                  onClick={handleDownload}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none transition-colors duration-200 text-sm font-medium"
-                >
-                  <ArrowDownTrayIcon className="w-4 h-4" />
-                  下载MP3
-                </button>
-              </div>
+          <form onSubmit={handleSubmit} className="mt-8">
+            <div className="flex gap-2 flex-col sm:flex-row">
+              <input
+                  type="text"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="paste the link here"
+                  className="flex-1 px-4 py-2 rounded-md border border-black bg-white text-black focus:ring-1 focus:ring-black focus:outline-none"
+                  required
+              />
+              <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 focus:outline-none disabled:opacity-50 transition-colors duration-200 font-medium"
+              >
+                {loading ? '处理中...' : '提取音频'}
+              </button>
             </div>
-          </div>
-        )}
+          </form>
+
+          {/* 添加进度条 */}
+          {loading && (
+              <div className="mt-6">
+                <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2">
+                  <div
+                      className="bg-blue-600 h-1.5 rounded-full transition-all duration-300 ease-in-out"
+                      style={{ width: `${progress}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-gray-500 text-center">
+                  {progress === 0 ? '准备中...' : `处理进度: ${progress}%`}
+                </p>
+              </div>
+          )}
+
+          {error && (
+              <div className="mt-6 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+          )}
+
+          {audioInfo && (
+              <div className="mt-8 bg-white rounded-md border border-gray-200 shadow-md p-4">
+                <div className="flex items-start gap-4">
+                  <div className="w-32 h-32 relative flex-shrink-0">
+                    <Image
+                        src={audioInfo.thumbnail}
+                        alt={audioInfo.title}
+                        fill
+                        className="rounded-md object-cover"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-medium text-black mb-1">
+                      {audioInfo.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      时长: {Math.floor(Number(audioInfo.duration) / 60)}分{Number(audioInfo.duration) % 60}秒
+                    </p>
+                    <button
+                        onClick={handleDownload}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none transition-colors duration-200 text-sm font-medium"
+                        disabled={loading}
+                    >
+                      <ArrowDownTrayIcon className="w-4 h-4" />
+                      {loading ? '处理中...' : '下载MP3'}
+                    </button>
+                    {downloadUrl && (
+                      <p className="mt-2 text-sm text-gray-600">
+                        文件已上传，可以重复下载：
+                        <a 
+                          href={downloadUrl} 
+                          className="text-blue-600 hover:text-blue-800 underline ml-1"
+                          download
+                        >
+                          点击下载
+                        </a>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+          )}
+        </div>
       </div>
-    </div>
   );
 }
