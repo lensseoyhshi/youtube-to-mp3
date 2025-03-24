@@ -16,6 +16,8 @@ export default function Home() {
     duration: string;
   } | null>(null);
   const [cookieStr, setCookieStr] = useState('');  // 添加cookie状态
+  const [downloadProgress, setDownloadProgress] = useState(0); // 添加下载进度状态
+  const [downloadLoading, setDownloadLoading] = useState(false); // 下载按钮状态
 
   // 获取浏览器cookie
   useEffect(() => {
@@ -65,43 +67,85 @@ export default function Home() {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null); // 添加下载URL状态
 
   const handleDownload = async () => {
+    if (!audioInfo) return;
+
     try {
+      setDownloadLoading(true);
       setCookieStr(document.cookie);
-  
+      setError(''); // 清除之前的错误
+
+      // 显示下载进度状态
+      setDownloadProgress(10);
+      console.log('开始下载处理...');
+
       // 1. 先从YouTube下载MP3
+      console.log('从API获取MP3数据...');
       const response = await fetch('/api/download', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url, cookie: cookieStr })
       });
-  
+
       if (!response.ok) {
-        throw new Error('下载失败');
+        throw new Error(`下载失败: ${response.status} ${response.statusText}`);
       }
-  
+
+      // 获取blob数据
       const blob = await response.blob();
-  
+      console.log('获取到Blob数据大小:', blob.size, 'bytes', 'MIME类型:', blob.type);
+
+      if (blob.size === 0) {
+        throw new Error('下载的文件大小为0，请检查下载API');
+      }
+
+      setDownloadProgress(50);
+
       // 2. 创建FormData对象用于上传
+      const fileName = `${audioInfo.title.replace(/[^\w\s.-]/g, '')}.mp3`; // 清理文件名
+      const file = new File([blob], fileName, { type: 'audio/mpeg' });
+      console.log('创建的File对象大小:', file.size, 'bytes');
+
       const formData = new FormData();
-      const fileName = `${audioInfo?.title}.mp3`;
-      formData.append('file', blob, fileName);
-      formData.append('title', audioInfo?.title || '');
-  
-      // 3. 上传到后端
+      formData.append('file', file);
+      formData.append('title', audioInfo.title || '');
+
+      // 检查FormData内容
+      console.log('FormData内容:');
+      for (let [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`${key}: File, size=${value.size}, type=${value.type}, name=${value.name}`);
+        } else {
+          console.log(`${key}: ${value}`);
+        }
+      }
+
+      setDownloadProgress(70);
+
+      // 3. 上传到后端 - 使用相对路径
+      console.log('开始上传到服务器...');
       const uploadResponse = await fetch('/api/upload', {
         method: 'POST',
+        // 不设置Content-Type，让浏览器自动处理
         body: formData
       });
-  
+
+      console.log('上传响应状态:', uploadResponse.status);
+
       if (!uploadResponse.ok) {
-        throw new Error('上传失败');
+        const errorText = await uploadResponse.text();
+        console.error('上传失败详情:', errorText);
+        throw new Error(`上传失败: ${uploadResponse.status} ${uploadResponse.statusText}`);
       }
-  
+
+      setDownloadProgress(90);
+
       const uploadResult = await uploadResponse.json();
-      
+      console.log('上传结果:', uploadResult);
+
       if (uploadResult.success) {
+        setDownloadProgress(100);
         setDownloadUrl(uploadResult.downloadUrl);
-        
+
         // 4. 使用后端返回的下载链接进行下载
         const link = document.createElement('a');
         link.href = uploadResult.downloadUrl;
@@ -113,7 +157,10 @@ export default function Home() {
         throw new Error(uploadResult.error || '上传处理失败');
       }
     } catch (err) {
+      console.error('下载处理错误:', err);
       setError(err instanceof Error ? err.message : '下载或上传音频时发生错误');
+    } finally {
+      setDownloadLoading(false);
     }
   };
 
@@ -173,14 +220,14 @@ export default function Home() {
           {audioInfo && (
               <div className="mt-8 bg-white rounded-md border border-gray-200 shadow-md p-4">
                 <div className="flex items-start gap-4">
-                  <div className="w-32 h-32 relative flex-shrink-0">
-                    <Image
-                        src={audioInfo.thumbnail}
-                        alt={audioInfo.title}
-                        fill
-                        className="rounded-md object-cover"
-                    />
-                  </div>
+                  {/*<div className="w-32 h-32 relative flex-shrink-0">*/}
+                  {/*  <Image*/}
+                  {/*      src={audioInfo.thumbnail}*/}
+                  {/*      alt={audioInfo.title}*/}
+                  {/*      fill*/}
+                  {/*      className="rounded-md object-cover"*/}
+                  {/*  />*/}
+                  {/*</div>*/}
                   <div className="flex-1">
                     <h3 className="text-lg font-medium text-black mb-1">
                       {audioInfo.title}
@@ -191,22 +238,39 @@ export default function Home() {
                     <button
                         onClick={handleDownload}
                         className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none transition-colors duration-200 text-sm font-medium"
-                        disabled={loading}
+                        disabled={downloadLoading}
                     >
                       <ArrowDownTrayIcon className="w-4 h-4" />
-                      {loading ? '处理中...' : '下载MP3'}
+                      {downloadLoading ? '处理中...' : '下载MP3'}
                     </button>
+
+                    {/* 下载进度条 */}
+                    {downloadLoading && (
+                        <div className="mt-3">
+                          <div className="w-full bg-gray-200 rounded-full h-1.5 mb-1">
+                            <div
+                                className="bg-green-500 h-1.5 rounded-full transition-all duration-300 ease-in-out"
+                                style={{ width: `${downloadProgress}%` }}
+                            ></div>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            {downloadProgress < 50 ? '下载中...' :
+                                downloadProgress < 90 ? '上传中...' : '完成中...'}
+                          </p>
+                        </div>
+                    )}
+
                     {downloadUrl && (
-                      <p className="mt-2 text-sm text-gray-600">
-                        文件已上传，可以重复下载：
-                        <a 
-                          href={downloadUrl} 
-                          className="text-blue-600 hover:text-blue-800 underline ml-1"
-                          download
-                        >
-                          点击下载
-                        </a>
-                      </p>
+                        <p className="mt-2 text-sm text-gray-600">
+                          文件已上传，可以重复下载：
+                          <a
+                              href={downloadUrl}
+                              className="text-blue-600 hover:text-blue-800 underline ml-1"
+                              download
+                          >
+                            点击下载
+                          </a>
+                        </p>
                     )}
                   </div>
                 </div>
