@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
-import Image from 'next/image';
 
 const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -15,12 +14,7 @@ export default function Home() {
     audioUrl: string;
     title: string;
   } | null>(null);
-  const [cookieStr, setCookieStr] = useState('');  // 添加cookie状态
 
-  // 获取浏览器cookie
-  useEffect(() => {
-    setCookieStr(document.cookie);
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
