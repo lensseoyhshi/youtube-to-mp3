@@ -16,6 +16,32 @@ export default function Home() {
   } | null>(null);
 
 
+  // 添加状态轮询函数
+  const pollStatus = async (fileId: string): Promise<any> => {
+    try {
+      const response = await fetch(`${baseURL}/api/status/${fileId}`);
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || '转换失败');
+      }
+
+      if (data.status === 'pending' || data.status === 'processing') {
+        // 如果还在处理中，等待10秒后继续轮询
+        setProgress((prev) => Math.min(prev + 10, 90)); // 模拟进度增加
+        await new Promise(resolve => setTimeout(resolve, 10000));
+        return pollStatus(fileId);
+      } else if (data.status === 'completed') {
+        setProgress(100);
+        return data;
+      } else if (data.status === 'failed') {
+        throw new Error('转换失败');
+      }
+    } catch (err) {
+      throw err;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -24,6 +50,7 @@ export default function Home() {
     setProgress(0);
 
     try {
+      // 第一步：发起转换请求
       const response = await fetch(`${baseURL}/api/convert`, {
         method: 'POST',
         headers: {
@@ -33,7 +60,7 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        throw new Error('转换失败');
+        throw new Error('转换请求失败');
       }
 
       const data = await response.json();
@@ -41,13 +68,18 @@ export default function Home() {
         throw new Error(data.error || '转换失败');
       }
 
+      // 第二步：开始轮询状态
+      setProgress(10);
+      const statusResult = await pollStatus(data.fileId);
+
+      // 第三步：设置下载信息
       setAudioInfo({
-        audioUrl: data.downloadUrl,
-        title: data.title,
+        audioUrl: statusResult.downloadUrl,
+        title: statusResult.title,
       });
-      setLoading(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : '转换音频时发生错误');
+    } finally {
       setLoading(false);
     }
   };
@@ -57,10 +89,7 @@ export default function Home() {
       if (!audioInfo?.audioUrl) {
         throw new Error('音频地址不存在');
       }
-
-      // 直接使用 downloadUrl 进行下载
       window.location.href = `${baseURL}${audioInfo.audioUrl}`;
-
     } catch (err) {
       setError(err instanceof Error ? err.message : '下载音频时发生错误');
     }
