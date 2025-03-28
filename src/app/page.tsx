@@ -5,6 +5,26 @@ import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 
 const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+
+// 在文件顶部添加这些接口定义
+interface ConvertResponse {
+  fileId: string;
+  status: string;
+  statusUrl: string;
+  success: boolean;
+  taskId: string;
+  error?: string;  // 添加可选的 error 字段
+}
+
+interface StatusResponse {
+  downloadUrl: string;
+  fileId: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  success: boolean;
+  title: string;
+  error?: string;
+}
+
 export default function Home() {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,18 +37,17 @@ export default function Home() {
 
 
   // 添加状态轮询函数
-  const pollStatus = async (fileId: string): Promise<any> => {
+  const pollStatus = async (fileId: string): Promise<StatusResponse> => {
     try {
       const response = await fetch(`${baseURL}/api/status/${fileId}`);
-      const data = await response.json();
+      const data = await response.json() as StatusResponse;
 
       if (!data.success) {
         throw new Error(data.error || '转换失败');
       }
 
       if (data.status === 'pending' || data.status === 'processing') {
-        // 如果还在处理中，等待10秒后继续轮询
-        setProgress((prev) => Math.min(prev + 10, 90)); // 模拟进度增加
+        setProgress((prev) => Math.min(prev + 10, 90));
         await new Promise(resolve => setTimeout(resolve, 10000));
         return pollStatus(fileId);
       } else if (data.status === 'completed') {
@@ -37,6 +56,8 @@ export default function Home() {
       } else if (data.status === 'failed') {
         throw new Error('转换失败');
       }
+
+      throw new Error('未知状态');
     } catch (err) {
       throw err;
     }
@@ -63,7 +84,7 @@ export default function Home() {
         throw new Error('转换请求失败');
       }
 
-      const data = await response.json();
+      const data = await response.json() as ConvertResponse;
       if (!data.success) {
         throw new Error(data.error || '转换失败');
       }
