@@ -1,11 +1,12 @@
 'use client';
 
+// Remove unused Head import
 import { useState } from 'react';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { YouTubeLogo } from '@/components/YouTubeLogo';
 import { Footer } from '@/components/Footer';
 import Link from 'next/link';
-import Head from 'next/head';
+
 
 const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -244,7 +245,7 @@ export default function Home() {
 
           {/* 添加热门下载部分 */}
           <div className="mt-16">
-            <h2 className="text-xl font-semibold mb-4 text-l">Trends</h2>
+            <h2 className="text-xl font-semibold mb-4 text-l">Convert Trends</h2>
             <div className="grid grid-cols-2 gap-4">
               {popularVideos.map((video, index) => (
                 <a 
@@ -375,7 +376,7 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <h2 className="text-2xl font-bold mb-8 text-center">Frequently Asked Questions</h2>
+            <h2 className="text-2xl font-bold mb-8 text-center">Questions About Youtube To MP3</h2>
             <div className="bg-gray-50 p-8 rounded-lg border border-gray-100">
              
               
@@ -395,7 +396,7 @@ export default function Home() {
                       }
                     }}
                   >
-                    <h4 className="font-medium text-lg">How to convert YouTube videos to MP3?</h4>
+                    <h3 className="font-medium text-lg">How to convert YouTube videos to MP3?</h3>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 faq-icon transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
@@ -405,10 +406,10 @@ export default function Home() {
                       Converting YouTube videos to MP3 with our tool is incredibly simple and takes just a few steps:
                     </p>
                     <ol className="list-decimal pl-5 mt-2 space-y-2 text-gray-700">
-                      <li>Copy the YouTube video URL from your browser's address bar.</li>
+                      <li>Copy the YouTube video URL from your browser&rsquo;s address bar.</li>
                       <li>Paste the URL into our converter box at the top of this page.</li>
-                      <li>Click the "Convert to MP3" button and wait for the conversion to complete.</li>
-                      <li>Once finished, click the "Download MP3" button to save the audio file to your device.</li>
+                      <li>Click the &rsquo;Convert to MP3&rsquo; button and wait for the conversion to complete.</li>
+                      <li>Once finished, click the &rsquo;Download MP3&rsquo; button to save the audio file to your device.</li>
                     </ol>
                     <p className="mt-3 text-gray-700">
                       The entire process typically takes less than a minute, depending on the length of the video. Our converter works with all YouTube videos and supports high-quality 320kbps audio output.
@@ -431,7 +432,7 @@ export default function Home() {
                       }
                     }}
                   >
-                    <h4 className="font-medium text-lg">What is the quality of the MP3 files?</h4>
+                    <h3 className="font-medium text-lg">What is the quality of the MP3 files?</h3>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 faq-icon transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
@@ -467,7 +468,7 @@ export default function Home() {
                       }
                     }}
                   >
-                    <h4 className="font-medium text-lg">How to download YouTube music to MP3 on iPhone?</h4>
+                    <h3 className="font-medium text-lg">How to download YouTube music to MP3 on iPhone?</h3>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 faq-icon transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
@@ -478,15 +479,27 @@ export default function Home() {
                     </p>
                     <ol className="list-decimal pl-5 mt-2 space-y-2 text-gray-700">
                       <li>Open Safari browser on your iPhone and visit our website</li>
-                      <li>Open the YouTube app, find your desired video, and tap the "Share" button</li>
-                      <li>Select "Copy Link" to copy the video URL</li>
+                      <li>Open the YouTube app, find your desired video, and tap the &rsquo;Share&rsquo; button</li>
+                      <li>Select &rsquo;Copy Link&rsquo; to copy the video URL</li>
                       <li>Return to our converter in Safari and paste the URL into the conversion box</li>
-                      <li>Tap "Convert to MP3" and wait for the process to complete</li>
-                      <li>When finished, tap "Download MP3" to save the file</li>
+                     
+                      <p className="text-gray-700">
+                        Click &quot;Convert to MP3&quot; and wait for the process to complete
+                      </p>
+                      
+                      <p className="text-gray-700">
+                        Click &quot;Share&quot; button
+                      </p>
+                      
+                      <p className="text-gray-700">
+                        Select &quot;Copy Link&quot; to copy the video URL
+                      </p>
+                      <li>Tap &rsquo;Convert to MP3&rsquo; and wait for the process to complete</li>
+                      <li>When finished, tap &rsquo;Download MP3&rsquo; to save the file</li>
                       <li>The file will download to your Files app, where you can play it or move it to your Music app</li>
                     </ol>
                     <p className="mt-3 text-gray-700">
-                      Our converter works directly in your browser, so there's no need to install any apps. This makes it the easiest way to download YouTube audio on iOS devices. The downloaded MP3 files can be played offline anytime.
+                      Our converter works directly in your browser, so there&rsquo;s no need to install any apps. This makes it the easiest way to download YouTube audio on iOS devices. The downloaded MP3 files can be played offline anytime.
                     </p>
                   </div>
                 </div>
@@ -506,19 +519,19 @@ export default function Home() {
                       }
                     }}
                   >
-                    <h4 className="font-medium text-lg">Is this YouTube to MP3 converter safe to use?</h4>
+                    <h3 className="font-medium text-lg">Is this YouTube to MP3 converter safe to use?</h3>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 faq-icon transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
                   <div className="hidden px-6 py-4 bg-gray-50 border-t border-gray-200">
                     <p className="text-gray-700">
-                      Yes, our YouTube to MP3 converter is completely safe to use. We've implemented several security measures to ensure user safety:
+                      Yes, our YouTube to MP3 converter is completely safe to use. We&rsquo;ve implemented several security measures to ensure user safety:
                     </p>
                     <ul className="list-disc pl-5 mt-2 space-y-2 text-gray-700">
                       <li>No software installation required - everything works in your browser</li>
                       <li>No account registration needed - convert videos anonymously</li>
-                      <li>We don't store your converted files on our servers - files are deleted after download</li>
+                      <li>We don&rsquo;t store your converted files on our servers - files are deleted after download</li>
                       <li>No personal data collection - we respect your privacy</li>
                       <li>Secure HTTPS connection - all data transfers are encrypted</li>
                       <li>No ads with malicious code or misleading download buttons</li>
@@ -544,14 +557,14 @@ export default function Home() {
                       }
                     }}
                   >
-                    <h4 className="font-medium text-lg">Can I convert YouTube playlists to MP3?</h4>
+                    <h3 className="font-medium text-lg">Can I convert YouTube playlists to MP3?</h3>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 faq-icon transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
                   <div className="hidden px-6 py-4 bg-gray-50 border-t border-gray-200">
                     <p className="text-gray-700">
-                      While our converter is optimized for individual YouTube videos, you can convert videos from playlists one by one. Here's how to efficiently convert multiple videos from a playlist:
+                      While our converter is optimized for individual YouTube videos, you can convert videos from playlists one by one. Here&rsquo;s how to efficiently convert multiple videos from a playlist:
                     </p>
                     <ol className="list-decimal pl-5 mt-2 space-y-2 text-gray-700">
                       <li>Open the YouTube playlist in your browser</li>

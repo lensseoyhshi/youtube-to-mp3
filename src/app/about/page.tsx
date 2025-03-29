@@ -2,10 +2,6 @@
 
 import Link from 'next/link';
 import { Footer } from '@/components/Footer';
-import { Metadata } from 'next';
-
-// 注意：在客户端组件中不能直接导出 metadata
-// 需要在 about 文件夹中创建一个单独的 metadata.ts 文件
 
 export default function About() {
   return (
@@ -47,7 +43,7 @@ export default function About() {
           <p className="mb-4">
             Founded in 2024, YouTube MP3 was created by a team of audio enthusiasts and developers who wanted to build a 
             better solution for converting YouTube content to audio format. We noticed that many existing tools were either 
-            too complicated, filled with ads, or didn't provide good quality results.
+            too complicated, filled with ads, or didn&rsquo;t provide good quality results.
           </p>
           
           <h2 className="text-2xl font-semibold mt-8 mb-4">How It Works</h2>
@@ -57,13 +53,19 @@ export default function About() {
           <ul className="list-disc pl-5 mb-4">
             <li>Speed - conversions typically complete within seconds</li>
             <li>Quality - we maintain the highest possible audio quality</li>
-            <li>Privacy - we don't store your videos or personal information</li>
+            <p className="mb-4">
+              We don&apos;t store your videos or personal information
+            </p>
+            
+            <p className="mb-4">
+              There&apos;s no need to worry about privacy
+            </p>
             <li>Simplicity - our interface is designed to be intuitive and easy to use</li>
           </ul>
           
           <h2 className="text-2xl font-semibold mt-8 mb-4">Contact Us</h2>
           <p>
-            Have questions or feedback? We'd love to hear from you! Reach out to us at 
+            Have questions or feedback? We&rsquo;d love to hear from you! Reach out to us at 
             <a href="mailto:yhuaml@gmail.com" className="text-red-600 ml-1">yhuaml@gmail.com</a>
           </p>
         </div>
