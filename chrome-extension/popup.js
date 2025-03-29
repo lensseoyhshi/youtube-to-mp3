@@ -1,207 +1,229 @@
-// popup.js - 处理扩展弹出窗口的交互逻辑
+// 全局变量
+let currentVideoUrl = '';
+let convertInProgress = false;
+let fileId = null;
+let statusCheckInterval = null;
 
-document.addEventListener('DOMContentLoaded', function() {
-  // 获取DOM元素
-  const urlInput = document.getElementById('url-input');
-  const extractBtn = document.getElementById('extract-btn');
-  const autoExtractCheckbox = document.getElementById('auto-extract-checkbox');
-  const progressContainer = document.getElementById('progress-container');
-  const progressFill = document.getElementById('progress-fill');
-  const progressText = document.getElementById('progress-text');
-  const errorContainer = document.getElementById('error-container');
-  const audioInfo = document.getElementById('audio-info');
-  const thumbnail = document.getElementById('thumbnail');
-  const audioTitle = document.getElementById('audio-title');
-  const audioDuration = document.getElementById('audio-duration');
-  const downloadBtn = document.getElementById('download-btn');
+// DOM元素
+const apiBaseUrl = "https://server.youtube-to-mp3.net";// 本地开发环境URL，上线时需要修改为实际API地址
+const currentUrlElement = document.getElementById('currentUrl');
+const convertBtn = document.getElementById('convertBtn');
+// const copyUrlBtn = document.getElementById('copyUrlBtn');
+const statusContainer = document.getElementById('statusContainer');
+const statusText = document.getElementById('statusText');
+const progressBar = document.getElementById('progressBar');
+const errorContainer = document.getElementById('errorContainer');
+const downloadContainer = document.getElementById('downloadContainer');
+const downloadTitle = document.getElementById('downloadTitle');
+const downloadBtn = document.getElementById('downloadBtn');
+
+// 初始化
+document.addEventListener('DOMContentLoaded', async () => {
+  // 获取当前标签页信息
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  const currentTab = tabs[0];
   
-  // 初始状态
-  let currentVideoId = null;
-  let audioData = null;
-  
-  // 检查当前标签页是否是YouTube视频
-  function checkCurrentTab() {
-    if (autoExtractCheckbox.checked) {
-      chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        const currentTab = tabs[0];
-        if (currentTab && currentTab.url && currentTab.url.includes('youtube.com/watch')) {
-          urlInput.value = currentTab.url;
-          extractAudio();
-        }
-      });
-    }
+  if (currentTab && currentTab.url && isYouTubeUrl(currentTab.url)) {
+    currentVideoUrl = currentTab.url;
+    currentUrlElement.textContent = currentTab.url;
+    convertBtn.disabled = false;
+  } else {
+    currentUrlElement.textContent = '当前页面不是YouTube视频页面';
+    convertBtn.disabled = true;
   }
   
-  // 从URL中提取YouTube视频ID
-  function extractVideoId(url) {
-    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[7].length === 11) ? match[7] : null;
-  }
-  
-  // 显示错误信息
-  function showError(message) {
-    errorContainer.textContent = message;
-    errorContainer.style.display = 'block';
-    progressContainer.style.display = 'none';
-  }
-  
-  // 隐藏错误信息
-  function hideError() {
-    errorContainer.style.display = 'none';
-  }
-  
-  // 更新进度条
-  function updateProgress(percent, message) {
-    progressFill.style.width = `${percent}%`;
-    progressText.textContent = message;
-  }
-  
-  // 提取音频
-  function extractAudio() {
-    const url = urlInput.value.trim();
-    
-    if (!url) {
-      showError('请输入YouTube视频链接');
-      return;
-    }
-    
-    const videoId = extractVideoId(url);
-    
-    if (!videoId) {
-      showError('无效的YouTube链接');
-      return;
-    }
-    
-    // 如果是同一个视频，直接显示之前的结果
-    if (videoId === currentVideoId && audioData) {
-      showAudioInfo(audioData);
-      return;
-    }
-    
-    currentVideoId = videoId;
-    hideError();
-    audioInfo.style.display = 'none';
-    progressContainer.style.display = 'block';
-    extractBtn.disabled = true;
-    
-    updateProgress(10, '获取视频信息...');
-    
-    // 向content script发送消息，获取当前页面的视频信息
-    if (url.includes('youtube.com/watch')) {
-      chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, {action: 'getVideoInfo'}, function(response) {
-          if (chrome.runtime.lastError) {
-            // 如果content script没有响应，则通过background script获取信息
-            getVideoInfoFromApi(videoId);
-          } else if (response && response.success) {
-            processVideoInfo(response.data);
-          } else {
-            getVideoInfoFromApi(videoId);
-          }
-        });
-      });
-    } else {
-      // 如果不是在YouTube页面上，直接通过API获取
-      getVideoInfoFromApi(videoId);
-    }
-  }
-  
-  // 通过background script的API获取视频信息
-  function getVideoInfoFromApi(videoId) {
-    updateProgress(30, '通过API获取视频信息...');
-    
-    chrome.runtime.sendMessage(
-      {action: 'getVideoInfo', videoId: videoId},
-      function(response) {
-        if (response && response.success) {
-          processVideoInfo(response.data);
-        } else {
-          showError(response ? response.error : '获取视频信息失败');
-          extractBtn.disabled = false;
-        }
-      }
-    );
-  }
-  
-  // 处理获取到的视频信息
-  function processVideoInfo(data) {
-    updateProgress(60, '准备音频转换...');
-    
-    audioData = {
-      id: currentVideoId,
-      title: data.title,
-      duration: data.duration,
-      thumbnail: data.thumbnail,
-      author: data.author
-    };
-    
-    // 向background script发送消息，准备音频转换
-    chrome.runtime.sendMessage(
-      {action: 'prepareAudioConversion', videoId: currentVideoId},
-      function(response) {
-        if (response && response.success) {
-          updateProgress(100, '音频准备完成');
-          setTimeout(() => {
-            showAudioInfo(audioData);
-            extractBtn.disabled = false;
-          }, 500);
-        } else {
-          showError(response ? response.error : '音频转换准备失败');
-          extractBtn.disabled = false;
-        }
-      }
-    );
-  }
-  
-  // 显示音频信息
-  function showAudioInfo(data) {
-    thumbnail.src = data.thumbnail || '';
-    audioTitle.textContent = data.title || '未知标题';
-    
-    // 格式化时长
-    let durationText = '未知时长';
-    if (data.duration) {
-      const minutes = Math.floor(data.duration / 60);
-      const seconds = data.duration % 60;
-      durationText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-    }
-    
-    audioDuration.textContent = durationText;
-    progressContainer.style.display = 'none';
-    audioInfo.style.display = 'block';
-  }
-  
-  // 下载音频
-  function downloadAudio() {
-    if (!currentVideoId) return;
-    
-    downloadBtn.disabled = true;
-    progressContainer.style.display = 'block';
-    updateProgress(0, '准备下载...');
-    
-    chrome.runtime.sendMessage(
-      {action: 'downloadAudio', videoId: currentVideoId, title: audioData.title},
-      function(response) {
-        if (response && response.success) {
-          updateProgress(100, '下载已开始');
-          setTimeout(() => {
-            progressContainer.style.display = 'none';
-            downloadBtn.disabled = false;
-          }, 1000);
-        } else {
-          showError(response ? response.error : '下载失败');
-          downloadBtn.disabled = false;
-        }
-      }
-    );
-  }
-  
-  // 事件监听
-  extractBtn.addEventListener('click', extractAudio);
-  downloadBtn.addEventListener('click', downloadAudio);
-  autoExtractCheckbox.addEventListener('change', checkCurrentTab);
-  
-  // 初始化时检查当前标签页
-  checkCurrentTab();
+  // 添加事件监听器
+  convertBtn.addEventListener('click', handleConvert);
+  // copyUrlBtn.addEventListener('click', handleCopyUrl);
+  downloadBtn.addEventListener('click', handleDownload);
 });
+
+// 检查是否是YouTube URL
+function isYouTubeUrl(url) {
+  return url.match(/^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[a-zA-Z0-9_-]{11}/);
+}
+
+// 处理转换按钮点击
+async function handleConvert() {
+  if (convertInProgress) return;
+  
+  resetUI();
+  convertInProgress = true;
+  convertBtn.disabled = true;
+  statusContainer.style.display = 'block';
+  
+  try {
+    // 获取当前页面的cookie
+    const cookies = await getCookies();
+    
+    // 调用转换API
+    const response = await fetch(`${apiBaseUrl}/api/convert`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ url: currentVideoUrl })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API错误: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || '转换失败');
+    }
+    
+    fileId = data.fileId;
+    
+    // 开始轮询状态
+    updateProgress(10);
+    startStatusPolling(fileId);
+  } catch (error) {
+    handleError(error.message);
+  }
+}
+
+// 开始轮询状态
+function startStatusPolling(fileId) {
+  let progress = 10;
+  
+  statusCheckInterval = setInterval(async () => {
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/status/${fileId}`);
+      
+      if (!response.ok) {
+        throw new Error(`API错误: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || '转换失败');
+      }
+      
+      if (data.status === 'pending' || data.status === 'processing') {
+        // 更新进度
+        progress = Math.min(progress + 10, 90);
+        updateProgress(progress);
+        statusText.textContent = '正在转换...';
+      } else if (data.status === 'completed') {
+        // 转换完成
+        clearInterval(statusCheckInterval);
+        updateProgress(100);
+        statusText.textContent = '转换完成！';
+        
+        // 显示下载信息
+        showDownloadInfo(data.title, data.downloadUrl);
+      } else if (data.status === 'failed') {
+        throw new Error('转换失败');
+      }
+    } catch (error) {
+      clearInterval(statusCheckInterval);
+      handleError(error.message);
+    }
+  }, 2000); // 每2秒检查一次
+}
+
+// 处理下载按钮点击
+async function handleDownload() {
+  try {
+    const downloadUrl = downloadBtn.getAttribute('data-url');
+    if (!downloadUrl) {
+      throw new Error('Url not found');
+    }
+    
+    // 获取当前页面的cookie
+    const cookies = await getCookies();
+    
+    // 调用下载API
+    // 构建带参数的URL
+    const params = new URLSearchParams();
+    params.append('url', currentVideoUrl);
+    params.append('cookie', cookies);
+    
+    const response = await fetch(`${apiBaseUrl}${downloadUrl}?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'audio/mpeg, application/octet-stream'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Download Error ${response.status}`);
+    }
+    
+    // 创建Blob并下载
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = `${downloadTitle.textContent || 'youtube-audio'}.mp3`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    handleError(error.message);
+  }
+}
+
+// 处理复制链接按钮点击
+function handleCopyUrl() {
+  navigator.clipboard.writeText(currentVideoUrl)
+    .then(() => {
+      copyUrlBtn.textContent = '已复制';
+      setTimeout(() => {
+        copyUrlBtn.textContent = '复制链接';
+      }, 2000);
+    })
+    .catch(error => {
+      handleError('复制链接失败');
+    });
+}
+
+// 获取YouTube页面的cookies
+async function getCookies() {
+  try {
+    const cookies = await chrome.cookies.getAll({ domain: '.youtube.com' });
+    return cookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ');
+  } catch (error) {
+    console.error('Get Cookie Failure', error);
+    return '';
+  }
+}
+
+// 更新进度条
+function updateProgress(value) {
+  progressBar.style.width = `${value}%`;
+}
+
+// 显示下载信息
+function showDownloadInfo(title, downloadUrl) {
+  downloadTitle.textContent = title || 'YouTube MP3';
+  downloadBtn.setAttribute('data-url', downloadUrl);
+  downloadContainer.style.display = 'block';
+}
+
+// 处理错误
+function handleError(message) {
+  convertInProgress = false;
+  convertBtn.disabled = false;
+  statusContainer.style.display = 'none';
+  errorContainer.style.display = 'block';
+  errorContainer.textContent = `Error ${message}`;
+}
+
+// 重置UI
+function resetUI() {
+  errorContainer.style.display = 'none';
+  errorContainer.textContent = '';
+  downloadContainer.style.display = 'none';
+  statusText.textContent = 'Converting...';
+  updateProgress(0);
+  
+  if (statusCheckInterval) {
+    clearInterval(statusCheckInterval);
+  }
+}

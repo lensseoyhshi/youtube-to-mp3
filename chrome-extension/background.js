@@ -1,179 +1,177 @@
-// background.js - 处理API请求和下载功能
+// background.js - Handle background tasks and API requests
 
-// 监听来自popup的消息
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  if (request.action === 'getVideoInfo') {
-    // 获取视频信息
-    getVideoInfo(request.videoId)
-      .then(data => {
-        sendResponse({success: true, data: data});
-      })
-      .catch(error => {
-        console.error('获取视频信息失败:', error);
-        sendResponse({success: false, error: '获取视频信息失败: ' + error.message});
-      });
-    return true; // 保持消息通道开放，以便异步响应
-  }
-  
-  else if (request.action === 'prepareAudioConversion') {
-    // 准备音频转换
-    prepareAudioConversion(request.videoId)
-      .then(() => {
-        sendResponse({success: true});
-      })
-      .catch(error => {
-        console.error('准备音频转换失败:', error);
-        sendResponse({success: false, error: '准备音频转换失败: ' + error.message});
-      });
-    return true; // 保持消息通道开放，以便异步响应
-  }
-  
-  else if (request.action === 'downloadAudio') {
-    // 下载音频
-    downloadAudio(request.videoId, request.title)
-      .then(() => {
-        sendResponse({success: true});
-      })
-      .catch(error => {
-        console.error('下载音频失败:', error);
-        sendResponse({success: false, error: '下载音频失败: ' + error.message});
-      });
-    return true; // 保持消息通道开放，以便异步响应
+// Global variables
+const apiBaseUrl = "https://server.youtube-to-mp3.net"; // Local development URL, should be changed to actual API address when deployed
+
+// 监听来自popup.js或content.js的消息
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // 根据消息类型执行不同操作
+  switch (request.action) {
+    case 'convert':
+      handleConvert(request.url, sendResponse);
+      return true; // 保持消息通道开放，以便异步响应
+    
+    case 'checkStatus':
+      checkStatus(request.fileId, sendResponse);
+      return true;
+    
+    case 'download':
+      handleDownload(request.url, request.downloadUrl, request.title, sendResponse);
+      return true;
+    
+    default:
+      sendResponse({ success: false, error: '未知操作' });
   }
 });
 
-// 从YouTube API获取视频信息
-async function getVideoInfo(videoId) {
-  try {
-    // 这里应该使用YouTube Data API获取视频信息
-    // 由于API需要密钥，这里使用一个简化的方法
-    
-    // 构建一个基本的视频信息对象
-    // 在实际应用中，这里应该调用YouTube API
-    const videoInfo = {
-      title: '视频 ' + videoId,
-      author: 'YouTube创作者',
-      thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-      duration: 180, // 假设视频长度为3分钟
-      url: `https://www.youtube.com/watch?v=${videoId}`,
-      videoId: videoId
-    };
-    
-    // 模拟API延迟
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    return videoInfo;
-  } catch (error) {
-    console.error('获取视频信息时出错:', error);
-    throw new Error('无法获取视频信息');
-  }
+// Handle video conversion request
+function handleConversion(videoUrl, cookies, sendResponse) {
+  // Get YouTube page cookies
+  getCookies(cookies)
+    .then(cookieHeader => {
+      // Call conversion API
+      return fetch(`${apiBaseUrl}/api/convert`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': cookieHeader
+        },
+        body: JSON.stringify({
+          url: videoUrl
+        })
+      });
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (!data.success) {
+        throw new Error(data.error || 'Conversion failed');
+      }
+      
+      // Return successful response
+      sendResponse({
+        success: true,
+        conversionId: data.conversionId,
+        title: data.title
+      });
+    })
+    .catch(error => {
+      console.error('Conversion failed:', error);
+      sendResponse({
+        success: false,
+        error: error.message || 'Conversion failed'
+      });
+    });
 }
 
-// 准备音频转换
-async function prepareAudioConversion(videoId) {
-  try {
-    // 这里应该调用后端服务来准备音频转换
-    // 由于这是一个前端扩展，我们只模拟这个过程
-    
-    // 模拟准备过程的延迟
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // 在实际应用中，这里应该与后端服务通信
-    // 例如，发送请求到自己的服务器，让服务器准备音频转换
-    
-    return true;
-  } catch (error) {
-    console.error('准备音频转换时出错:', error);
-    throw new Error('无法准备音频转换');
-  }
+// Check conversion status
+function checkConversionStatus(conversionId, cookies, sendResponse) {
+  getCookies(cookies)
+    .then(cookieHeader => {
+      return fetch(`${apiBaseUrl}/api/status/${conversionId}`, {
+        headers: {
+          'Cookie': cookieHeader
+        }
+      });
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to get status');
+      }
+      
+      // Return status information
+      sendResponse({
+        success: true,
+        status: data.status,
+        progress: data.progress,
+        title: data.title
+      });
+    })
+    .catch(error => {
+      console.error('Failed to get status:', error);
+      sendResponse({
+        success: false,
+        error: error.message || 'Failed to get status'
+      });
+    });
 }
 
-// 下载音频
-async function downloadAudio(videoId, title) {
+// 处理下载请求
+async function handleDownload(url, downloadUrl, title, sendResponse) {
   try {
-    // 格式化文件名
-    const fileName = (title || 'audio').replace(/[\\/:*?"<>|]/g, '_') + '.mp3';
+    // 获取YouTube页面的cookies
+    const cookies = await getCookies();
     
-    // 使用我们的网站API进行实际转换
-    const apiUrl = 'https://www.youtube-to-mp3.net/api/convert';
+    // 调用下载API
+    // 构建带参数的URL
+    const params = new URLSearchParams();
+    params.append('url', url);
+    params.append('cookie', cookies);
     
-    // 首先发送转换请求
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: `https://youtube.com/watch?v=${videoId}` })
+    const response = await fetch(`${apiBaseUrl}${downloadUrl}?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'audio/mpeg, application/octet-stream'
+      }
     });
     
     if (!response.ok) {
-      throw new Error('服务器响应错误: ' + response.status);
+      throw new Error(`下载失败: ${response.status}`);
     }
     
-    const data = await response.json();
+    // 获取blob数据
+    const blob = await response.blob();
     
-    if (!data.success) {
-      throw new Error(data.error || '转换失败');
-    }
+    // 创建下载链接
+    const downloadLink = URL.createObjectURL(blob);
     
-    // 轮询检查转换状态
-    let statusUrl = `https://www.youtube-to-mp3.net/api/status/${data.fileId}`;
-    let statusData;
-    let attempts = 0;
-    const maxAttempts = 30; // 最多尝试30次，每次间隔2秒
-    
-    while (attempts < maxAttempts) {
-      attempts++;
-      
-      const statusResponse = await fetch(statusUrl);
-      if (!statusResponse.ok) {
-        throw new Error('获取状态失败');
-      }
-      
-      statusData = await statusResponse.json();
-      
-      if (statusData.status === 'completed') {
-        break;
-      } else if (statusData.status === 'failed') {
-        throw new Error('音频转换失败');
-      }
-      
-      // 等待2秒再次检查
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
-    
-    if (attempts >= maxAttempts) {
-      throw new Error('转换超时');
-    }
-    
-    // 修改：直接使用完整的下载URL，不拼接域名
-    const downloadUrl = statusData.downloadUrl.startsWith('http') 
-      ? statusData.downloadUrl 
-      : `https://www.youtube-to-mp3.net${statusData.downloadUrl}`;
-    
-    // 修改：先尝试通过fetch获取文件内容，然后创建blob URL下载
-    const fileResponse = await fetch(downloadUrl);
-    if (!fileResponse.ok) {
-      throw new Error('获取文件失败: ' + fileResponse.status);
-    }
-    
-    const blob = await fileResponse.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    
+    // 使用chrome.downloads API下载文件
     chrome.downloads.download({
-      url: blobUrl,
-      filename: fileName,
+      url: downloadLink,
+      filename: `${title || 'youtube-audio'}.mp3`,
       saveAs: true
     }, (downloadId) => {
-      // 下载完成后释放blob URL
       if (chrome.runtime.lastError) {
-        console.error('下载错误:', chrome.runtime.lastError);
+        sendResponse({
+          success: false,
+          error: chrome.runtime.lastError.message
+        });
       } else {
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000); // 1分钟后释放
+        sendResponse({
+          success: true,
+          downloadId: downloadId
+        });
       }
+      
+      // 释放URL对象
+      URL.revokeObjectURL(downloadLink);
     });
-    
-    return true;
   } catch (error) {
-    console.error('下载音频时出错:', error);
-    throw new Error('无法下载音频: ' + error.message);
+    console.error('下载失败:', error);
+    sendResponse({
+      success: false,
+      error: error.message || '下载失败'
+    });
+  }
+}
+
+// 获取YouTube页面的cookies
+async function getCookies() {
+  try {
+    const cookies = await chrome.cookies.getAll({ domain: '.youtube.com' });
+    return cookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ');
+  } catch (error) {
+    console.error('获取cookie失败:', error);
+    return '';
   }
 }

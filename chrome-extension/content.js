@@ -1,77 +1,188 @@
-// content.js - 在YouTube页面上运行，获取视频信息
+// content.js - 在YouTube页面上添加功能按钮
 
-// 监听来自popup的消息
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  if (request.action === 'getVideoInfo') {
-    try {
-      // 获取视频信息
-      const videoInfo = extractVideoInfo();
-      if (videoInfo) {
-        sendResponse({success: true, data: videoInfo});
-      } else {
-        sendResponse({success: false, error: '无法从页面获取视频信息'});
-      }
-    } catch (error) {
-      console.error('获取视频信息时出错:', error);
-      sendResponse({success: false, error: '获取视频信息时出错'});
-    }
-    return true; // 保持消息通道开放，以便异步响应
+// 等待页面加载完成
+document.addEventListener('DOMContentLoaded', () => {
+  // 检查是否是YouTube视频页面
+  if (isYouTubeVideoPage()) {
+    // 添加转换按钮
+    addConvertButton();
   }
 });
 
-// 从YouTube页面提取视频信息
-function extractVideoInfo() {
-  // 检查是否在YouTube视频页面
-  if (!window.location.href.includes('youtube.com/watch')) {
-    return null;
-  }
-  
-  try {
-    // 获取视频标题
-    const title = document.querySelector('h1.title.style-scope.ytd-video-primary-info-renderer')?.textContent.trim() ||
-                 document.querySelector('h1.ytd-video-primary-info-renderer')?.textContent.trim() ||
-                 document.title.replace(' - YouTube', '');
-    
-    // 获取视频作者
-    const author = document.querySelector('#owner #channel-name')?.textContent.trim() ||
-                   document.querySelector('#owner-name a')?.textContent.trim() ||
-                   'Unknown';
-    
-    // 获取视频缩略图
-    const videoId = new URLSearchParams(window.location.search).get('v');
-    const thumbnail = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
-    
-    // 获取视频时长
-    let duration = 0;
-    const durationElement = document.querySelector('.ytp-time-duration');
-    if (durationElement) {
-      const durationText = durationElement.textContent;
-      const durationParts = durationText.split(':').map(part => parseInt(part, 10));
-      
-      if (durationParts.length === 3) { // 小时:分钟:秒
-        duration = durationParts[0] * 3600 + durationParts[1] * 60 + durationParts[2];
-      } else if (durationParts.length === 2) { // 分钟:秒
-        duration = durationParts[0] * 60 + durationParts[1];
-      }
+// 监听页面变化，处理YouTube的SPA导航
+let lastUrl = location.href;
+new MutationObserver(() => {
+  if (location.href !== lastUrl) {
+    lastUrl = location.href;
+    // 检查新页面是否是视频页面
+    if (isYouTubeVideoPage()) {
+      // 延迟添加按钮，确保YouTube UI已加载
+      setTimeout(() => {
+        addConvertButton();
+      }, 1000);
     }
-    
-    // 返回视频信息
-    return {
-      title: title,
-      author: author,
-      thumbnail: thumbnail,
-      duration: duration,
-      url: window.location.href,
-      videoId: videoId
-    };
-  } catch (error) {
-    console.error('提取视频信息时出错:', error);
-    return null;
   }
+}).observe(document, { subtree: true, childList: true });
+
+// 检查是否是YouTube视频页面
+function isYouTubeVideoPage() {
+  return location.href.match(/^(https?:\/\/)?(www\.)?youtube\.com\/watch\?v=[a-zA-Z0-9_-]{11}/);
 }
 
-// 页面加载完成后，检查是否有视频信息
-document.addEventListener('DOMContentLoaded', function() {
-  // 这里可以添加页面加载完成后的初始化代码
-  console.log('YouTube音频提取器已在页面上激活');
-});
+// 添加转换按钮到YouTube界面
+function addConvertButton() {
+  // 检查按钮是否已存在
+  if (document.getElementById('yt-to-mp3-btn')) {
+    return;
+  }
+  
+  // 查找YouTube的菜单区域
+  const menuContainer = document.querySelector('#top-level-buttons-computed');
+  
+  if (!menuContainer) {
+    console.error('无法找到YouTube菜单容器');
+    return;
+  }
+  
+  // 创建转换按钮
+  const convertButton = document.createElement('button');
+  convertButton.id = 'yt-to-mp3-btn';
+  convertButton.className = 'yt-spec-button-shape-next';
+  convertButton.innerHTML = `
+    <div class="yt-spec-button-shape-next__icon">
+      <svg height="24" viewBox="0 0 24 24" width="24">
+        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6zm-2 16c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"></path>
+      </svg>
+    </div>
+    <div class="yt-spec-button-shape-next__button-text-content">
+      <span>转换为MP3</span>
+    </div>
+  `;
+  
+  // 设置按钮样式
+  convertButton.style.display = 'flex';
+  convertButton.style.alignItems = 'center';
+  convertButton.style.padding = '0 16px';
+  convertButton.style.marginLeft = '8px';
+  convertButton.style.backgroundColor = '#ff0000';
+  convertButton.style.color = 'white';
+  convertButton.style.border = 'none';
+  convertButton.style.borderRadius = '18px';
+  convertButton.style.cursor = 'pointer';
+  convertButton.style.height = '36px';
+  
+  // 添加点击事件
+  convertButton.addEventListener('click', handleConvertClick);
+  
+  // 添加按钮到菜单
+  menuContainer.appendChild(convertButton);
+}
+
+// 处理转换按钮点击
+function handleConvertClick() {
+  // 获取当前视频URL
+  const videoUrl = window.location.href;
+  
+  // 发送消息到background.js
+  chrome.runtime.sendMessage(
+    { action: 'convert', url: videoUrl },
+    (response) => {
+      if (response && response.success) {
+        // 转换请求成功，显示通知
+        showNotification('转换已开始', '请稍候，您可以在扩展弹窗中查看进度');
+        
+        // 开始轮询状态
+        pollStatus(response.fileId);
+      } else {
+        // 转换请求失败，显示错误
+        showNotification('转换失败', response?.error || '未知错误');
+      }
+    }
+  );
+}
+
+// 轮询转换状态
+function pollStatus(fileId) {
+  const statusInterval = setInterval(() => {
+    chrome.runtime.sendMessage(
+      { action: 'checkStatus', fileId: fileId },
+      (response) => {
+        if (!response || !response.success) {
+          clearInterval(statusInterval);
+          showNotification('状态检查失败', response?.error || '未知错误');
+          return;
+        }
+        
+        if (response.status === 'completed') {
+          clearInterval(statusInterval);
+          showNotification(
+            '转换完成', 
+            `"${response.title}" 已准备好下载`,
+            () => {
+              // 点击通知时下载文件
+              chrome.runtime.sendMessage({
+                action: 'download',
+                url: window.location.href,
+                downloadUrl: response.downloadUrl,
+                title: response.title
+              });
+            }
+          );
+        } else if (response.status === 'failed') {
+          clearInterval(statusInterval);
+          showNotification('转换失败', '处理视频时出错');
+        }
+        // 对于pending和processing状态，继续轮询
+      }
+    );
+  }, 5000); // 每5秒检查一次
+  
+  // 60秒后停止轮询，避免无限轮询
+  setTimeout(() => {
+    clearInterval(statusInterval);
+  }, 60000);
+}
+
+// 显示通知
+function showNotification(title, message, onClick) {
+  // 创建通知元素
+  const notification = document.createElement('div');
+  notification.className = 'yt-to-mp3-notification';
+  notification.innerHTML = `
+    <div class="notification-title">${title}</div>
+    <div class="notification-message">${message}</div>
+  `;
+  
+  // 设置样式
+  notification.style.position = 'fixed';
+  notification.style.bottom = '20px';
+  notification.style.right = '20px';
+  notification.style.backgroundColor = '#fff';
+  notification.style.color = '#333';
+  notification.style.padding = '15px';
+  notification.style.borderRadius = '4px';
+  notification.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+  notification.style.zIndex = '9999';
+  notification.style.minWidth = '250px';
+  notification.style.maxWidth = '350px';
+  notification.style.transition = 'opacity 0.3s';
+  
+  // 添加点击事件
+  if (onClick) {
+    notification.style.cursor = 'pointer';
+    notification.addEventListener('click', onClick);
+  }
+  
+  // 添加到页面
+  document.body.appendChild(notification);
+  
+  // 5秒后自动关闭
+  setTimeout(() => {
+    notification.style.opacity = '0';
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 300);
+  }, 5000);
+}

@@ -1,27 +1,20 @@
 {
   "manifest_version": 3,
-  "name": "YouTube 音频提取器",
+  "name": "YouTube to MP3 Converter",
   "version": "1.0",
-  "description": "从YouTube视频中提取并下载MP3音频",
-  "permissions": [
-    "activeTab", 
-    "scripting", 
-    "downloads", 
-    "storage",
-    "webRequest"
-  ],
-  "host_permissions": [
-    "*://*.youtube.com/*",
-    "https://www.youtube-to-mp3.net/*",
-    "https://*/*"
-  ],
+  "description": "Convert YouTube videos to MP3 format and download",
+  "permissions": ["activeTab", "storage", "cookies"],
+  "host_permissions": ["*://*.youtube.com/*"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "images/icon16.png",
-      "48": "images/icon48.png",
-      "128": "images/icon128.png"
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
     }
+  },
+  "chrome_url_overrides": {
+    "newtab": "welcome.html"
   },
   "content_scripts": [
     {
@@ -33,8 +26,8 @@
     "service_worker": "background.js"
   },
   "icons": {
-    "16": "images/icon16.png",
-    "48": "images/icon48.png",
-    "128": "images/icon128.png"
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   }
 }
