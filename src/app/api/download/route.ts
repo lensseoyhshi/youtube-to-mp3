@@ -1,22 +1,32 @@
 import { NextResponse } from 'next/server';
 import { spawn } from 'child_process';
 import { Readable } from 'stream';
+import { writeCookieToTempFile, cleanupTempCookieFile } from '../../utils/cookie';
 
 export async function POST(request: Request) {
   try {
-    const { url } = await request.json();
+    const { url, cookie } = await request.json();
 
     if (!url) {
       return NextResponse.json({ error: 'URL is required' }, { status: 400 });
     }
 
-    // 使用yt-dlp下载音频，添加cookies参数解决人机验证问题
+    // 使用yt-dlp下载音频，使用cookie.txt文件解决人机验证问题
+    const cookiePath = cookie ? await writeCookieToTempFile(cookie) : 'public/cookie';
+    
     const ytDlp = spawn('yt-dlp', [
       '-f', 'bestaudio',
       '-o', '-',  // 输出到stdout
-      '--cookies-from-browser', 'chrome',
+      '--cookies', cookiePath,
       url
     ]);
+    
+    // 如果使用了临时cookie文件，在请求结束后清理
+    if (cookie) {
+      setTimeout(() => {
+        cleanupTempCookieFile(cookiePath).catch(console.error);
+      }, 5000); // 5秒后清理，确保命令有足够时间使用cookie文件
+    }
 
     // 创建一个可读流
     const stream = new Readable({
