@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>YouTube 音频提取器</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      width: 350px;
+      padding: 15px;
+      background-color: white;
+      color: black;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    .header h1 {
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+    .header p {
+      font-size: 12px;
+      color: #666;
+      margin: 0;
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    input {
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    button {
+      padding: 8px 10px;
+      background-color: #000;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: #333;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    .progress-container {
+      margin-top: 15px;
+      display: none;
+    }
+    .progress-bar {
+      height: 4px;
+      background-color: #eee;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 5px;
+    }
+    .progress-fill {
+      height: 100%;
+      background-color: #1a73e8;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    .progress-text {
+      font-size: 11px;
+      color: #666;
+      text-align: center;
+    }
+    .error {
+      background-color: #ffebee;
+      border: 1px solid #ffcdd2;
+      color: #c62828;
+      padding: 8px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-top: 15px;
+      display: none;
+    }
+    .audio-info {
+      margin-top: 15px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      padding: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: none;
+    }
+    .audio-info-content {
+      display: flex;
+      gap: 10px;
+    }
+    .thumbnail {
+      width: 80px;
+      height: 80px;
+      border-radius: 4px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .audio-details {
+      flex: 1;
+    }
+    .audio-title {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 5px;
+      word-break: break-word;
+    }
+    .audio-duration {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+    .download-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 10px;
+      background-color: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .download-btn:hover {
+      background-color: #1565c0;
+    }
+    .download-icon {
+      width: 14px;
+      height: 14px;
+    }
+    .auto-extract {
+      margin-top: 15px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>YouTube 音频提取器</h1>
+    <p>输入YouTube视频链接，一键提取并下载音频</p>
+  </div>
+
+  <div class="input-group">
+    <input type="text" id="url-input" placeholder="粘贴YouTube链接" />
+    <button id="extract-btn">提取音频</button>
+  </div>
+
+  <div class="auto-extract">
+    <input type="checkbox" id="auto-extract-checkbox" />
+    <label for="auto-extract-checkbox">自动检测当前页面的YouTube视频</label>
+  </div>
+
+  <div class="progress-container" id="progress-container">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <p class="progress-text" id="progress-text">准备中...</p>
+  </div>
+
+  <div class="error" id="error-container"></div>
+
+  <div class="audio-info" id="audio-info">
+    <div class="audio-info-content">
+      <img class="thumbnail" id="thumbnail" src="" alt="缩略图" />
+      <div class="audio-details">
+        <h3 class="audio-title" id="audio-title"></h3>
+        <p class="audio-duration" id="audio-duration"></p>
+        <button class="download-btn" id="download-btn">
+          <svg class="download-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 16l-5-5h3V4h4v7h3l-5 5zm5 4H7v-2h10v2z"/>
+          </svg>
+          下载MP3
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
