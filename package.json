@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "generate-sitemap": "ts-node scripts/generate-sitemap.ts",
+    "generate-sitemap": "node scripts/generate-sitemap.mjs",
     "build": "npm run generate-sitemap && next build"
   },
   "dependencies": {
