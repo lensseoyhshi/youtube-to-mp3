@@ -243,27 +243,7 @@ export default function Home() {
             </form>
           </div>
 
-          {/* 添加热门下载部分 */}
-          <div className="mt-16">
-            <h2 className="text-xl font-semibold mb-4 text-l">Convert Trends</h2>
-            <div className="grid grid-cols-2 gap-4">
-              {popularVideos.map((video, index) => (
-                <a 
-                  key={video.id} 
-                  href={`https://www.youtube.com/watch?v=${video.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block p-3 hover:bg-gray-50 transition-colors"
-                >
-                  <p className="text-sm text-gray-800 truncate font-medium">
-                    <span className="font-bold mr-2">{index + 1}.</span>
-                    {video.title}
-                  </p>
-                </a>
-              ))}
-            </div>
-          </div>
-
+       
     
 
           {/* 添加进度条 */}
@@ -305,6 +285,28 @@ export default function Home() {
                 </div>
               </div>
           )}
+
+             {/* 添加热门下载部分 */}
+             <div className="mt-16">
+            <h2 className="text-xl font-semibold mb-4 text-l">Convert Trends</h2>
+            <div className="grid grid-cols-2 gap-4">
+              {popularVideos.map((video, index) => (
+                <a 
+                  key={video.id} 
+                  href={`https://www.youtube.com/watch?v=${video.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block p-3 hover:bg-gray-50 transition-colors"
+                >
+                  <p className="text-sm text-gray-800 truncate font-medium">
+                    <span className="font-bold mr-2">{index + 1}.</span>
+                    {video.title}
+                  </p>
+                </a>
+              ))}
+            </div>
+          </div>
+
 
                   {/* 添加免责声明 */}
       <div className="mt-[10vh]">
