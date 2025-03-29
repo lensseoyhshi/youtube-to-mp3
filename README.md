@@ -1,10 +1,32 @@
 
+# YouTube to MP3 Converter
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+## Website Introduction
 
-First, run the development server:
+[YouTube to MP3 Converter](https://www.youtube-to-mp3.net) is a free online tool that allows you to convert YouTube videos to high-quality MP3 format.
 
+### Key Features
+
+- 🚀 Fast Conversion: Complete most conversions within seconds
+- 🎵 High Quality Audio: Support up to 320kbps audio quality
+- 💻 No Download Required: Web-based solution, no software installation needed
+- 🔒 Safe & Secure: Focus on user privacy, no personal data storage
+- 🆓 Always Free: Provide unlimited free conversion service
+- 📱 Cross-Platform: Works on all devices including desktop and mobile
+
+### How to Use
+
+1. Visit [www.youtube-to-mp3.net](https://www.youtube-to-mp3.net)
+2. Copy your YouTube video URL
+3. Paste it into the converter box
+4. Click the convert button
+5. Download your MP3 file when conversion is complete
+
+## Development Guide
+
+### Development Environment
 ```bash
 npm run dev
 # or
@@ -14,34 +36,3 @@ pnpm dev
 # or
 bun dev
 ```
-
-### 开发环境
-npm run dev
-
-### 生产环境
-npm run build
-npm run start
-
-
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
->>>>>>> b7ea908 (Initial commit from Create Next App)
