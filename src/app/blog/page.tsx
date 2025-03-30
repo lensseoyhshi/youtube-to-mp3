@@ -15,15 +15,22 @@ export default function Blog() {
                 <Link href="/" className="border-transparent text-gray-700 hover:text-gray-900 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-lg">
                   Home
                 </Link>
+                <Link href="/mp4" className="border-transparent text-gray-700 hover:text-gray-900 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-lg">
+                  MP4
+                </Link>
+                <Link href="/app" className="border-transparent text-gray-700 hover:text-gray-900 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-lg">
+                  APP
+                </Link>
                 <Link href="/blog" className="border-b-2 border-red-600 text-gray-900 inline-flex items-center px-1 pt-1 text-lg">
                   Blog
                 </Link>
-                <Link href="/changelog" className="border-transparent text-gray-700 hover:text-gray-900 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-lg">
+              
+                {/* <Link href="/changelog" className="border-transparent text-gray-700 hover:text-gray-900 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-lg">
                   Log
                 </Link>
                 <Link href="/about" className="border-transparent text-gray-700 hover:text-gray-900 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-lg">
                   About
-                </Link>
+                </Link> */}
               </div>
             </div>
           </div>
@@ -36,7 +43,7 @@ export default function Blog() {
         <div className="space-y-10">
           <article className="border-b pb-6">
             <h2 className="text-2xl font-semibold mb-2">How to Convert YouTube Videos to MP3</h2>
-            <p className="text-gray-500 mb-4">Published on May 15, 2024</p>
+            <p className="text-gray-500 mb-4">Published on March 15, 2025</p>
             <p className="mb-4">
               Converting YouTube videos to MP3 format allows you to enjoy your favorite content offline. 
               This guide explains how to use our tool effectively...
@@ -48,7 +55,7 @@ export default function Blog() {
           
           <article className="border-b pb-6">
             <h2 className="text-2xl font-semibold mb-2">Best Music Channels on YouTube</h2>
-            <p className="text-gray-500 mb-4">Published on April 28, 2024</p>
+            <p className="text-gray-500 mb-4">Published on March 28, 2024</p>
             <p className="mb-4">
               Discover the best music channels on YouTube that offer high-quality content for various genres...
             </p>

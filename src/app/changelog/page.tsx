@@ -53,7 +53,7 @@ export default function Changelog() {
           <div className="border-b pb-6">
             <div className="flex items-center mb-2">
               <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">v1.1.0</span>
-              <span className="ml-2 text-gray-500 text-sm">April 15, 2024</span>
+              <span className="ml-2 text-gray-500 text-sm">March 29, 2025</span>
             </div>
             <h2 className="text-xl font-semibold mb-2">New Features</h2>
             <ul className="list-disc pl-5 space-y-1 text-gray-600">
@@ -66,7 +66,7 @@ export default function Changelog() {
           <div className="border-b pb-6">
             <div className="flex items-center mb-2">
               <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">v1.0.0</span>
-              <span className="ml-2 text-gray-500 text-sm">March 1, 2024</span>
+              <span className="ml-2 text-gray-500 text-sm">March 1, 2025</span>
             </div>
             <h2 className="text-xl font-semibold mb-2">Initial Release</h2>
             <ul className="list-disc pl-5 space-y-1 text-gray-600">
