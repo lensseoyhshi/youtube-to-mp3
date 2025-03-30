@@ -196,18 +196,31 @@ export default function Home() {
               </div>
               
               {/* 添加收藏按钮 */}
-              <div className="flex items-center mr-40">
+              <div className="flex items-center space-x-4 mr-6">
                 <button 
                   onClick={() => {
                     alert('Press Ctrl+D (Windows) or Command+D (Mac) to bookmark this site');
                   }}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors text-sm font-medium"
+                  className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full hover:bg-red-100 transition-colors text-sm font-medium"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                   </svg>
-                  Click Here -&gt; Bookmark & Stay Updated
+                  Bookmark & Stay Updated
                 </button>
+                
+                {/* 电报群链接移到这里并调整样式 */}
+                <a 
+                  href="https://t.me/youtube2mpx" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors text-sm font-medium"
+                >
+                  <svg className="h-4 w-4" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248-1.97 9.296c-.146.658-.537.818-1.084.51l-3-2.21-1.446 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.121l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.534-.197 1.001.13.832.924z"/>
+                  </svg>
+                  Telegram
+                </a>
               </div>
             </div>
           </div>
