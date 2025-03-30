@@ -60,7 +60,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error downloading audio:', error);
     return NextResponse.json(
-      { error: '下载音频失败' },
+      { error: 'download failed...' },
       { status: 500 }
     );
   }

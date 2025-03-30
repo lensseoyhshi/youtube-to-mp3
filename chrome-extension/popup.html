@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube to MP3 Converter</title>
+  <style>
+    body {
+      width: 320px;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 15px;
+      background-color: #ffffff;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .logo {
+      width: 40px;
+      height: 40px;
+      margin-right: 10px;
+    }
+    h1 {
+      font-size: 18px;
+      margin: 0;
+      color: #FF0000;
+    }
+    .current-url {
+      background-color: #fff;
+      border: 2px solid #000;
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 15px;
+      word-break: break-all;
+      font-size: 14px;
+    }
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    button {
+      flex: 1;
+      background-color: #000000;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #333333;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    .status {
+      font-size: 14px;
+      margin-top: 10px;
+      color: #666;
+    }
+    .progress {
+      height: 5px;
+      background-color: #eee;
+      border-radius: 5px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background-color: #000000;
+      width: 0%;
+      transition: width 0.3s;
+    }
+    .error {
+      color: #FF0000;
+      font-size: 14px;
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #fff2f0;
+      border: 1px solid #ffccc7;
+      border-radius: 4px;
+    }
+    .download-info {
+      background-color: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 4px;
+      padding: 10px;
+      margin-top: 15px;
+      display: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .download-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+      word-break: break-all;
+    }
+    .download-button {
+      background-color: #000000;
+      margin-top: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .download-button:before {
+      content: '';
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3Cpolyline points='7 10 12 15 17 10'/%3E%3Cline x1='12' y1='15' x2='12' y2='3'/%3E%3C/svg%3E");
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="icons/icon48.png" alt="Logo" class="logo">
+    <h1>YouTube to MP3 Converter</h1>
+  </div>
+  
+  <div class="current-url" id="currentUrl">Loading...</div>
+  
+  <div class="buttons">
+    <button id="convertBtn">Convert to MP3</button>
+    <!-- <button id="copyUrlBtn">Copy Link</button> -->
+  </div>
+  
+  <div id="statusContainer" style="display: none;">
+    <div class="status" id="statusText">Converting...</div>
+    <div class="progress">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+  </div>
+  
+  <div id="errorContainer" class="error" style="display: none;"></div>
+  
+  <div id="downloadContainer" class="download-info">
+    <div class="download-title" id="downloadTitle"></div>
+    <button id="downloadBtn" class="download-button">Download MP3</button>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
