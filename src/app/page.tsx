@@ -439,7 +439,51 @@ export default function Home() {
                   </div>
                 </div>
                 
-                {/* FAQ Item 2 */}
+                {/* New FAQ Item */}
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <button 
+                    className="w-full px-6 py-4 text-left bg-white hover:bg-gray-50 flex justify-between items-center transition-colors"
+                    onClick={(e) => {
+                      const content = e.currentTarget.nextElementSibling;
+                      if (content) {
+                        content.classList.toggle('hidden');
+                        const icon = e.currentTarget.querySelector('.faq-icon');
+                        if (icon) {
+                          icon.classList.toggle('rotate-180');
+                        }
+                      }
+                    }}
+                  >
+                    <h3 className="font-medium text-lg">How to download MP3 from YouTube?</h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 faq-icon transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  <div className="hidden px-6 py-4 bg-gray-50 border-t border-gray-200">
+                    <p className="text-gray-700">
+                      Downloading MP3 from YouTube is quick and easy with our online converter. Here's a detailed guide:
+                    </p>
+                    <ol className="list-decimal pl-5 mt-2 space-y-2 text-gray-700">
+                      <li>Find your favorite YouTube video or music that you want to download</li>
+                      <li>Click the 'Share' button below the video or right-click on the video title</li>
+                      <li>Select 'Copy link' or 'Copy URL' from the options</li>
+                      <li>Return to our converter and paste the URL in the input box</li>
+                      <li>Click 'Convert to MP3' and wait for the conversion to complete</li>
+                      <li>Once done, click the 'Download MP3' button to save your audio file</li>
+                    </ol>
+                    <p className="mt-3 text-gray-700">
+                      Important tips for downloading:
+                    </p>
+                    <ul className="list-disc pl-5 mt-2 space-y-2 text-gray-700">
+                      <li>Make sure you have a stable internet connection during conversion</li>
+                      <li>Our converter supports videos up to several hours in length</li>
+                      <li>The downloaded MP3 will maintain high audio quality at 320kbps</li>
+                      <li>Files are automatically named based on the video title for easy organization</li>
+                    </ul>
+                  </div>
+                </div>
+                
+                {/* Continue with other FAQ items */}
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
                   <button 
                     className="w-full px-6 py-4 text-left bg-white hover:bg-gray-50 flex justify-between items-center transition-colors"
