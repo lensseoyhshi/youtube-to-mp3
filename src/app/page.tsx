@@ -43,14 +43,14 @@ export default function Home() {
   } | null>(null);
   
   // 添加热门视频数据
-  const [popularVideos] = useState([
-    { id: 'dQw4w9WgXcQ', title: 'Rick Astley - Never Gonna Give You Up' },
-    { id: 'kJQP7kiw5Fk', title: 'Luis Fonsi - Despacito ft. Daddy Yankee' },
-    { id: 'RgKAFK5djSk', title: 'Wiz Khalifa - See You Again ft. Charlie Puth' },
-    { id: '9bZkp7q19f0', title: 'PSY - GANGNAM STYLE(강남스타일)' },
-    { id: 'OPf0YbXqDm0', title: 'Mark Ronson - Uptown Funk ft. Bruno Mars' },
-    { id: 'fRh_vgS2dFE', title: 'Justin Bieber - Sorry (PURPOSE)' },
-  ]);
+  // const [popularVideos] = useState([
+  //   { id: 'dQw4w9WgXcQ', title: 'Rick Astley - Never Gonna Give You Up' },
+  //   { id: 'kJQP7kiw5Fk', title: 'Luis Fonsi - Despacito ft. Daddy Yankee' },
+  //   { id: 'RgKAFK5djSk', title: 'Wiz Khalifa - See You Again ft. Charlie Puth' },
+  //   { id: '9bZkp7q19f0', title: 'PSY - GANGNAM STYLE(강남스타일)' },
+  //   { id: 'OPf0YbXqDm0', title: 'Mark Ronson - Uptown Funk ft. Bruno Mars' },
+  //   { id: 'fRh_vgS2dFE', title: 'Justin Bieber - Sorry (PURPOSE)' },
+  // ]);
 
   // 添加状态轮询函数
   const pollStatus = async (fileId: string): Promise<StatusResponse> => {
