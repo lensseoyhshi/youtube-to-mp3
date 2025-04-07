@@ -15,13 +15,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "YouTube to MP3 Converter - Free & Online & High Quality",
-  description: "Download your YouTube videos as MP3 audio files for free with the fastest and best YouTube Converter,anytime, anywhere!",
-  //keywords: "YouTube to MP3, YouTube converter, MP3 converter, audio extractor, YouTube audio, download YouTube audio, YouTube MP3 downloader",
+  title: "YouTube to MP3 Converter | APP & GOOGLE EXTENSION",
+  description: "Convert YouTube videos to MP3 quickly and safely with our free online converter. Enjoy high-quality audio downloads for music, playlists, and more—on any device!",
+  keywords: "YouTube to MP3 converter,320kbps, YouTube converter, download YouTube audio, YouTube MP3 downloader",
   authors: [{ name: "YouTube MP3 Team" }],
   openGraph: {
     title: "Best YouTube to MP3 Converter -- Free & High Quality & Online",
-    description: "Try our best online YouTube to MP3 converter—free, safe, and easy to use. Convert YouTube videos to MP3 in 320kbps, download playlists, and enjoy high-quality audio instantly. Perfect for quick, secure conversions from YouTube to MP3 anytime, anywhere!",
+    description: "Convert YouTube videos to MP3 quickly and safely with our free online converter. Enjoy high-quality audio downloads for music, playlists, and more—on any device!",
     url: "https://www.youtube-to-mp3.net",
     siteName: "YouTube to MP3 Converter",
     locale: "en_US",
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Best YouTube to MP3 Converter -- Free & High Quality & Online",
-    description: "Try our best online YouTube to MP3 converter—free, safe, and easy to use. Convert YouTube videos to MP3 in 320kbps, download playlists, and enjoy high-quality audio instantly. Perfect for quick, secure conversions from YouTube to MP3 anytime, anywhere!",
+    description: "Convert YouTube videos to MP3 quickly and safely with our free online converter. Enjoy high-quality audio downloads for music, playlists, and more—on any device!",
   },
   alternates: {
     canonical: "https://www.youtube-to-mp3.net",
