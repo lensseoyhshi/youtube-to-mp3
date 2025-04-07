@@ -15,12 +15,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "YouTube to MP3 Converter | APP & GOOGLE EXTENSION",
+  title: "YouTube to MP3 Converter|APP & GOOGLE EXTENSION",
   description: "Convert YouTube videos to MP3 quickly and safely with our free online converter. Enjoy high-quality audio downloads for music, playlists, and more—on any device!",
   keywords: "YouTube to MP3 converter,320kbps, YouTube converter, download YouTube audio, YouTube MP3 downloader",
   authors: [{ name: "YouTube MP3 Team" }],
   openGraph: {
-    title: "Best YouTube to MP3 Converter -- Free & High Quality & Online",
+    title: "Best YouTube to MP3 Converter",
     description: "Convert YouTube videos to MP3 quickly and safely with our free online converter. Enjoy high-quality audio downloads for music, playlists, and more—on any device!",
     url: "https://www.youtube-to-mp3.net",
     siteName: "YouTube to MP3 Converter",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Best YouTube to MP3 Converter -- Free & High Quality & Online",
+    title: "Best YouTube to MP3 Converter",
     description: "Convert YouTube videos to MP3 quickly and safely with our free online converter. Enjoy high-quality audio downloads for music, playlists, and more—on any device!",
   },
   alternates: {
