@@ -490,7 +490,7 @@ export default function Home() {
               <div className="absolute -top-4 -left-4 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-bold text-lg">2</div>
               <h3 className="text-lg font-semibold mb-3 mt-2">Paste & Convert YouTube to MP3</h3>
               <p className="text-gray-700">
-                Paste the YouTube link into our free YouTube to MP3 converter box above and click the "Convert to MP3" button to start the conversion process.
+                Paste the YouTube link into our free YouTube to MP3 converter box above and click the &rdquo;Convert to MP3&rdquo; button to start the conversion process.
               </p>
               <div className="mt-4 flex justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -503,7 +503,7 @@ export default function Home() {
               <div className="absolute -top-4 -left-4 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-bold text-lg">3</div>
               <h3 className="text-lg font-semibold mb-3 mt-2">Download High Quality MP3</h3>
               <p className="text-gray-700">
-                Once the YouTube to MP3 conversion is complete, click the "Download MP3" button to save the 320kbps high-quality MP3 file to your device for offline listening.
+                Once the YouTube to MP3 conversion is complete, click the &rdquo;Download MP3&rdquo; button to save the 320kbps high-quality MP3 file to your device for offline listening.
               </p>
               <div className="mt-4 flex justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -556,7 +556,7 @@ export default function Home() {
                 Privacy-Protected MP3 Download Service
               </h3>
               <p className="text-gray-700">
-                We don't store your YouTube to MP3 download files or personal information. Once you download your MP3 file, it's immediately removed from our servers for complete privacy.
+                We do not store your YouTube to MP3 download files or personal information. Once you download your MP3 file, it is immediately removed from our servers for complete privacy.
               </p>
             </div>
             
