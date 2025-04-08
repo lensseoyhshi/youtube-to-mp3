@@ -42,25 +42,24 @@ export default function Home() {
   const [isNavigationBlocked, setIsNavigationBlocked] = useState(false);
 
   // 修改函数定义
+  // 添加导航阻止功能
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (loading) {
+      if (isNavigationBlocked) {
         e.preventDefault();
-        e.returnValue = ''; // 这是为了兼容旧版浏览器
-        return '';
+        e.returnValue = '';
       }
     };
 
-    // 拦截刷新和关闭窗口
     window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isNavigationBlocked]);
 
-    // 设置导航拦截状态
+  // 在加载状态改变时更新导航阻止状态
+  useEffect(() => {
     setIsNavigationBlocked(loading);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
   }, [loading]);
+
 
   // 处理内部导航链接点击
   // 修改 handleLinkClick 函数的类型定义
