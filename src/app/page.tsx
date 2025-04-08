@@ -1,15 +1,14 @@
 'use client';
 
-// Remove unused Head import
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { YouTubeLogo } from '@/components/YouTubeLogo';
 import { Footer } from '@/components/Footer';
 import Link from 'next/link';
-
+import { useRouter } from 'next/navigation';
+import { MouseEvent } from 'react';
 
 const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
 
 // 在文件顶部添加这些接口定义
 interface ConvertResponse {
@@ -30,9 +29,8 @@ interface StatusResponse {
   error?: string;
 }
 
-
-
 export default function Home() {
+  const router = useRouter();
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -41,16 +39,56 @@ export default function Home() {
     audioUrl: string;
     title: string;
   } | null>(null);
-  
-  // 添加热门视频数据
-  // const [popularVideos] = useState([
-  //   { id: 'dQw4w9WgXcQ', title: 'Rick Astley - Never Gonna Give You Up' },
-  //   { id: 'kJQP7kiw5Fk', title: 'Luis Fonsi - Despacito ft. Daddy Yankee' },
-  //   { id: 'RgKAFK5djSk', title: 'Wiz Khalifa - See You Again ft. Charlie Puth' },
-  //   { id: '9bZkp7q19f0', title: 'PSY - GANGNAM STYLE(강남스타일)' },
-  //   { id: 'OPf0YbXqDm0', title: 'Mark Ronson - Uptown Funk ft. Bruno Mars' },
-  //   { id: 'fRh_vgS2dFE', title: 'Justin Bieber - Sorry (PURPOSE)' },
-  // ]);
+  const [isNavigationBlocked, setIsNavigationBlocked] = useState(false);
+
+  // 修改函数定义
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (loading) {
+        e.preventDefault();
+        e.returnValue = ''; // 这是为了兼容旧版浏览器
+        return '';
+      }
+    };
+
+    // 拦截刷新和关闭窗口
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // 设置导航拦截状态
+    setIsNavigationBlocked(loading);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [loading]);
+
+  // 处理内部导航链接点击
+  // 修改 handleLinkClick 函数的类型定义
+  const handleLinkClick = (e: MouseEvent<HTMLAnchorElement>, href: string): void => {
+    if (loading) {
+      e.preventDefault();
+      if (confirm('转换过程正在进行中，离开页面将中断转换。确定要离开吗？')) {
+        // 用户确认离开
+        setLoading(false); // 停止加载状态
+        router.push(href);
+      }
+    }
+    // 如果不在加载状态，正常导航
+  };
+
+  // 创建自定义链接组件来处理导航
+  // 修改 NavLink 组件
+  const NavLink = ({ href, className, children }: { href: string, className?: string, children: React.ReactNode }) => {
+    return (
+        <Link
+            href={href}
+            className={className}
+            onClick={(e) => handleLinkClick(e as MouseEvent<HTMLAnchorElement>, href)}
+        >
+          {children}
+        </Link>
+    );
+  };
 
   // 添加状态轮询函数
   const pollStatus = async (fileId: string): Promise<StatusResponse> => {
@@ -81,7 +119,7 @@ export default function Home() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!url.trim()) {
       setError('Please paste a YouTube URL to convert');
       return;
@@ -150,78 +188,76 @@ export default function Home() {
   };
 
   return (
-    
       <div className="min-h-screen bg-white text-black flex flex-col">
         {/* 添加结构化数据 */}
         <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebApplication",
-              "name": "YouTube to MP3 Converter",
-              "applicationCategory": "MultimediaApplication",
-              "operatingSystem": "Web",
-              "offers": {
-                "@type": "Offer",
-                "price": "0",
-                "priceCurrency": "USD"
-              },
-              "description": "Free online YouTube to MP3 converter. Extract high-quality audio from YouTube videos with one click.",
-              "url": "https://www.youtube-to-mp3.net"
-            })
-          }}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "WebApplication",
+                "name": "YouTube to MP3 Converter",
+                "applicationCategory": "MultimediaApplication",
+                "operatingSystem": "Web",
+                "offers": {
+                  "@type": "Offer",
+                  "price": "0",
+                  "priceCurrency": "USD"
+                },
+                "description": "Free online YouTube to MP3 converter. Extract high-quality audio from YouTube videos with one click.",
+                "url": "https://www.youtube-to-mp3.net"
+              })
+            }}
         />
-        
+
         {/* 添加导航栏 */}
-       
         <nav>
-          <div >
+          <div>
             <div className="flex justify-between h-16">
               <div className="flex">
                 <div className="hidden sm:ml-6 sm:flex sm:space-x-10">
-                  <Link href="/" className="border-b-2 border-red-600 text-gray-900 inline-flex items-center px-1 pt-1 text-lg">
+                  <NavLink href="/" className="border-b-2 border-red-600 text-gray-900 inline-flex items-center px-1 pt-1 text-lg">
                     Home
-                  </Link>
-                
-                  <Link href="/mp4" className="border-transparent text-gray-700 hover:text-gray-900 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-lg">
-                  MP4
-                </Link>
-                <Link href="/app" className="border-transparent text-gray-700 hover:text-gray-900 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-lg">
-                  APP
-                </Link>
-                <Link href="/blog" className="border-transparent text-gray-700 hover:text-gray-900 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-lg ">
+                  </NavLink>
+
+                  <NavLink href="/mp4" className="border-transparent text-gray-700 hover:text-gray-900 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-lg">
+                    MP4
+                  </NavLink>
+                  <NavLink href="/app" className="border-transparent text-gray-700 hover:text-gray-900 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-lg">
+                    APP
+                  </NavLink>
+                  <NavLink href="/blog" className="border-transparent text-gray-700 hover:text-gray-900 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-lg ">
                     Blog
-                  </Link>
-                  {/* <Link href="/changelog" className="border-transparent text-gray-700 hover:text-gray-900 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-lg">
-                    Log
-                  </Link>
-                  <Link href="/about" className="border-transparent text-gray-700 hover:text-gray-900 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-lg">
-                    About
-                  </Link> */}
+                  </NavLink>
+                  {/* <NavLink href="/changelog" className="border-transparent text-gray-700 hover:text-gray-900 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-lg">
+                  Log
+                </NavLink>
+                <NavLink href="/about" className="border-transparent text-gray-700 hover:text-gray-900 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-lg">
+                  About
+                </NavLink> */}
                 </div>
               </div>
-              
+
               {/* 添加收藏按钮 */}
               <div className="flex items-center space-x-4 mr-6">
-                <button 
-                  onClick={() => {
-                    alert('Press Ctrl+D (Windows) or Command+D (Mac) to bookmark this site');
-                  }}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full hover:bg-red-100 transition-colors text-sm font-medium"
+                <button
+                    onClick={() => {
+                      alert('Press Ctrl+D (Windows) or Command+D (Mac) to bookmark this site');
+                    }}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full hover:bg-red-100 transition-colors text-sm font-medium"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                   </svg>
                   Bookmark & Stay Updated
                 </button>
-                
+
                 {/* 电报群链接移到这里并调整样式 */}
-                <a 
-                  href="https://t.me/youtube2mpx" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors text-sm font-medium"
+                <a
+                    href="https://t.me/youtube2mpx"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors text-sm font-medium"
                 >
                   <svg className="h-4 w-4" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248-1.97 9.296c-.146.658-.537.818-1.084.51l-3-2.21-1.446 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.121l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.534-.197 1.001.13.832.924z"/>
@@ -232,10 +268,10 @@ export default function Home() {
             </div>
           </div>
         </nav>
-      
+
         <div className="max-w-4xl w-full mx-auto mt-[8vh] px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-          <h1 className="text-white bg-white select-none absolute  m-2">youtube to mp3 converter</h1>
+            <h1 className="text-white bg-white select-none absolute m-2">youtube to mp3 converter</h1>
             <div className="flex items-center justify-center gap-3 mb-8">
               <span className="text-5xl font-bold text-red-600">YouTube</span>
               <div className="w-16">
@@ -262,9 +298,6 @@ export default function Home() {
               </div>
             </form>
           </div>
-
-       
-    
 
           {/* 添加进度条 */}
           {loading && (
@@ -306,71 +339,71 @@ export default function Home() {
               </div>
           )}
 
-             {/* 添加热门下载部分 - 使用热门搜索关键词 */}
-             <div className="mt-16">
-            <h2 className="text-xl  mb-4 text-l">Youtube Trends</h2>
+          {/* 添加热门下载部分 - 使用热门搜索关键词 */}
+          <div className="mt-16">
+            <h2 className="text-xl mb-4 text-l">Youtube Trends</h2>
             <div className="grid grid-cols-2 gap-4">
               {/* 使用热门搜索关键词替换原有内容 */}
-              <a 
-                href="https://www.youtube.com/results?search_query=youtube+to+mp3+converter+free" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block p-3 hover:bg-gray-50 transition-colors"
+              <a
+                  href="https://www.youtube.com/results?search_query=youtube+to+mp3+converter+free"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block p-3 hover:bg-gray-50 transition-colors"
               >
                 <p className="text-sm text-gray-800 truncate font-medium">
                   <span className="font-bold mr-2">1.</span>
                   YouTube to MP3 Converter Free
                 </p>
               </a>
-              <a 
-                href="https://www.youtube.com/results?search_query=youtube+to+mp3+download" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block p-3 hover:bg-gray-50 transition-colors"
+              <a
+                  href="https://www.youtube.com/results?search_query=youtube+to+mp3+download"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block p-3 hover:bg-gray-50 transition-colors"
               >
                 <p className="text-sm text-gray-800 truncate font-medium">
                   <span className="font-bold mr-2">2.</span>
                   YouTube to MP3 Download
                 </p>
               </a>
-              <a 
-                href="https://www.youtube.com/results?search_query=youtube+to+mp3+320kbps" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block p-3 hover:bg-gray-50 transition-colors"
+              <a
+                  href="https://www.youtube.com/results?search_query=youtube+to+mp3+320kbps"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block p-3 hover:bg-gray-50 transition-colors"
               >
                 <p className="text-sm text-gray-800 truncate font-medium">
                   <span className="font-bold mr-2">3.</span>
                   YouTube to MP3 320kbps
                 </p>
               </a>
-              <a 
-                href="https://www.youtube.com/results?search_query=youtube+video+to+mp3+converter" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block p-3 hover:bg-gray-50 transition-colors"
+              <a
+                  href="https://www.youtube.com/results?search_query=youtube+video+to+mp3+converter"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block p-3 hover:bg-gray-50 transition-colors"
               >
                 <p className="text-sm text-gray-800 truncate font-medium">
                   <span className="font-bold mr-2">4.</span>
                   YouTube Video to MP3 Converter
                 </p>
               </a>
-              <a 
-                href="https://www.youtube.com/results?search_query=youtube+to+mp3+download" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block p-3 hover:bg-gray-50 transition-colors"
+              <a
+                  href="https://www.youtube.com/results?search_query=youtube+to+mp3+download"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block p-3 hover:bg-gray-50 transition-colors"
               >
                 <p className="text-sm text-gray-800 truncate font-medium">
                   <span className="font-bold mr-2">5.</span>
                   YouTube to MP3 Download
                 </p>
               </a>
-              <a 
-                href="https://www.youtube.com/results?search_query=youtube+music+to+mp3" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block p-3 hover:bg-gray-50 transition-colors"
+              <a
+                  href="https://www.youtube.com/results?search_query=youtube+music+to+mp3"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block p-3 hover:bg-gray-50 transition-colors"
               >
                 <p className="text-sm text-gray-800 truncate font-medium">
                   <span className="font-bold mr-2">6.</span>
@@ -380,311 +413,233 @@ export default function Home() {
             </div>
           </div>
 
-           {/* 新增 What is YouTube to MP3 部分 */}
-        <div className="mt-24" id="what-is">
-          <h2 className="text-2xl mb-6">What is YouTube to MP3 Converter?</h2>
-          <div className="bg-gray-50 rounded-lg p-6 shadow-sm border border-gray-100">
-            <p className="text-gray-700 mb-4">
-            YouTube to MP3 Converter is an online tool that extracts audio from YouTube videos and converts it into MP3 format. With features like high-quality 320kbps conversion, safe and free downloads, and support for long videos and playlists, it lets you easily transform your favorite YouTube content into portable audio files for offline listening. This converter—often described as a fast, reliable, and user-friendly solution is perfect for anyone looking to convert YouTube videos to MP3 quickly and securely.
-            </p>
-            {/* <p className="text-gray-700">
-              Our converter processes videos directly in the cloud, delivering high-quality 320kbps MP3 files that preserve the original audio clarity. The service works with all YouTube videos and requires no software installation or registration.
-            </p> */}
-          </div>
-        </div>
-
-        {/* 优化 Features 部分 - 增加关键词密度 */}
-        <div className="mt-16" id="features">
-          <h2 className="text-2xl mb-8">YouTube to MP3 Converter Benefits & Features</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-center mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold mb-2 text-center">Fast YouTube to MP3 Conversion</h3>
-              <p className="text-gray-700 text-center">
-                Convert YouTube videos to MP3 in seconds with our free YouTube to MP3 converter. Download YouTube to MP3 faster than any other converter.
-              </p>
-            </div>
-            
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-center mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold mb-2 text-center">320kbps High Quality MP3</h3>
-              <p className="text-gray-700 text-center">
-                Our YouTube to MP3 320kbps converter delivers premium audio quality. Convert YouTube to MP3 320kbps for the best sound experience.
-              </p>
-            </div>
-            
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-center mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold mb-2 text-center">Safe YouTube to MP3 Download</h3>
-              <p className="text-gray-700 text-center">
-                Our safe YouTube to MP3 converter requires no registration or software installation. Download YouTube to MP3 securely every time.
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-center mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold mb-2 text-center">YouTube Video to MP3 Online</h3>
-              <p className="text-gray-700 text-center">
-                Convert YouTube video to MP3 online without any software. Our YouTube to MP3 online converter works directly in your browser.
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-center mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold mb-2 text-center">YouTube Music to MP3</h3>
-              <p className="text-gray-700 text-center">
-                Download YouTube music to MP3 format on any device. Our YouTube to MP3 converter works on mobile, tablet, and desktop.
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-center mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold mb-2 text-center">Free YouTube to MP3 Converter</h3>
-              <p className="text-gray-700 text-center">
-                Our free YouTube to MP3 converter supports all video formats. Convert YouTube to MP3 free with no limits on file size or conversion time.
+          {/* 新增 What is YouTube to MP3 部分 */}
+          <div className="mt-24" id="what-is">
+            <h2 className="text-2xl mb-6">What is YouTube to MP3 Converter?</h2>
+            <div className="bg-gray-50 rounded-lg p-6 shadow-sm border border-gray-100">
+              <p className="text-gray-700 mb-4">
+                YouTube to MP3 Converter is an online tool that extracts audio from YouTube videos and converts it into MP3 format. With features like high-quality 320kbps conversion, safe and free downloads, and support for long videos and playlists, it lets you easily transform your favorite YouTube content into portable audio files for offline listening. This converter—often described as a fast, reliable, and user-friendly solution is perfect for anyone looking to convert YouTube videos to MP3 quickly and securely.
               </p>
             </div>
           </div>
-        </div>
 
-        {/* 新增 How to Use 部分 */}
-        <div className="mt-16" id="how-to">
-          <h2 className="text-2xl  mb-8 ">How to Convert YouTube to MP3 Online</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 relative">
-              <div className="absolute -top-4 -left-4 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-bold text-lg">1</div>
-              <h3 className="text-lg font-semibold mb-3 mt-2">Copy YouTube Video URL</h3>
-              <p className="text-gray-700">
-                Find your favorite YouTube video and copy the YouTube URL from your browser. Our YouTube to MP3 converter supports all YouTube video formats and links.
-              </p>
-              <div className="mt-4 bg-gray-50 p-3 rounded-md border border-gray-100">
-                <code className="text-sm text-gray-600">https://www.youtube.com/watch?v=...</code>
-              </div>
-            </div>
-            
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 relative">
-              <div className="absolute -top-4 -left-4 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-bold text-lg">2</div>
-              <h3 className="text-lg font-semibold mb-3 mt-2">Paste & Convert YouTube to MP3</h3>
-              <p className="text-gray-700">
-                Paste the YouTube link into our free YouTube to MP3 converter box above and click the &rdquo;Convert to MP3&rdquo; button to start the conversion process.
-              </p>
-              <div className="mt-4 flex justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                </svg>
-              </div>
-            </div>
-            
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 relative">
-              <div className="absolute -top-4 -left-4 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-bold text-lg">3</div>
-              <h3 className="text-lg font-semibold mb-3 mt-2">Download High Quality MP3</h3>
-              <p className="text-gray-700">
-                Once the YouTube to MP3 conversion is complete, click the &rdquo;Download MP3&rdquo; button to save the 320kbps high-quality MP3 file to your device for offline listening.
-              </p>
-              <div className="mt-4 flex justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-          
-          {/* <div className="mt-8 bg-gray-50 p-4 rounded-lg border border-gray-100">
-            <p className="text-center text-gray-700">
-              Our YouTube to MP3 converter works on all devices including Windows, Mac, iPhone, and Android. No software installation required - convert YouTube videos to MP3 directly in your browser.
-            </p>
-          </div> */}
-        </div>
-
-        {/* 新增 Why Choose Us 部分 */}
-        <div className="mt-16" id="why-choose">
-          <h2 className="text-2xl  mb-8 ">Why Choose Our YouTube to MP3 Download Converter</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-              <h3 className="text-lg font-semibold mb-3 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                High Quality YouTube to MP3 Download
-              </h3>
-              <p className="text-gray-700">
-                Our YouTube to MP3 download service provides 320kbps high-quality audio conversion, ensuring you get the best possible audio experience from YouTube videos with crystal-clear sound.
-              </p>
-            </div>
-            
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-              <h3 className="text-lg font-semibold mb-3 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                No Software Required for YouTube MP3 Download
-              </h3>
-              <p className="text-gray-700">
-                Our web-based YouTube to MP3 download converter works directly in your browser, eliminating the need to download and install potentially risky software on your device.
-              </p>
-            </div>
-            
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-              <h3 className="text-lg font-semibold mb-3 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Privacy-Protected MP3 Download Service
-              </h3>
-              <p className="text-gray-700">
-                We do not store your YouTube to MP3 download files or personal information. Once you download your MP3 file, it is immediately removed from our servers for complete privacy.
-              </p>
-            </div>
-            
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-              <h3 className="text-lg font-semibold mb-3 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Cross-Platform YouTube MP3 Download
-              </h3>
-              <p className="text-gray-700">
-                Our YouTube to MP3 download converter supports all major platforms including Windows, Mac, iOS, and Android, allowing you to easily download YouTube MP3s on any device.
-              </p>
-            </div>
-            
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-              <h3 className="text-lg font-semibold mb-3 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                User-Friendly YouTube Download Interface
-              </h3>
-              <p className="text-gray-700">
-                Our simple, intuitive design makes YouTube to MP3 download conversion quick and hassle-free, even for first-time users looking to download music from YouTube.
-              </p>
-            </div>
-            
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-              <h3 className="text-lg font-semibold mb-3 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Fast & Reliable MP3 Download Servers
-              </h3>
-              <p className="text-gray-700">
-                Our powerful cloud infrastructure ensures quick processing times and reliable YouTube to MP3 download conversions, even during peak usage periods for consistent performance.
-              </p>
-            </div>
-          </div>
-        </div>
-
-                  {/* 添加免责声明 */}
-      {/* <div className="mt-[10vh]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-          <p className="text-gray-500 text-sm text-center">
-            For technical exchange, illegal activities are strictly prohibited!
-          </p>
-        </div>
-      </div> */}
-          
-          {/* 网站介绍部分 - 增加更大的上边距确保在首屏之外 */}
-          <div className="mt-2 pt-24 mb-4 ">
-            {/* <h2 className="text-2xl font-bold mb-8 text-center">Best YouTube to MP3 Converter Online</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-16">
-              <div>
-                <h3 className="text-xl font-semibold mb-4">Free YouTube to MP3 Converter - 320kbps High Quality</h3>
-                <p className="text-gray-700 mb-4">
-                  Our YouTube to MP3 converter is the perfect tool for music enthusiasts, offering free conversion of YouTube videos to high-quality 320kbps MP3 files with just one click.
-                </p>
-                <p className="text-gray-700">
-                  Whether you need to download YouTube music, podcasts, or lectures, our online converter helps you extract audio content safely and efficiently for offline enjoyment anytime, anywhere.
-                </p>
-              </div>
-              <div className="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-100">
-                <div className="aspect-video bg-red-50 rounded-md flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+          {/* 优化 Features 部分 - 增加关键词密度 */}
+          <div className="mt-16" id="features">
+            <h2 className="text-2xl mb-8">YouTube to MP3 Converter Benefits & Features</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-center mb-4">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-semibold mb-2 text-center">Fast & Free Conversion</h3>
+                <h3 className="text-lg font-semibold mb-2 text-center">Fast YouTube to MP3 Conversion</h3>
                 <p className="text-gray-700 text-center">
-                  Convert YouTube videos to MP3 in seconds with our lightning-fast servers. Download YouTube audio to MP3 format completely free, with no registration required.
+                  Convert YouTube videos to MP3 in seconds with our free YouTube to MP3 converter. Download YouTube to MP3 faster than any other converter.
                 </p>
               </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-center mb-4">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-semibold mb-2 text-center">320kbps High-Quality Audio</h3>
+                <h3 className="text-lg font-semibold mb-2 text-center">320kbps High Quality MP3</h3>
                 <p className="text-gray-700 text-center">
-                  Our YouTube to MP3 converter delivers premium 320kbps audio quality, preserving the original sound clarity and detail for the best listening experience.
+                  Our YouTube to MP3 320kbps converter delivers premium audio quality. Convert YouTube to MP3 320kbps for the best sound experience.
                 </p>
               </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-center mb-4">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-semibold mb-2 text-center">Safe & Reliable</h3>
+                <h3 className="text-lg font-semibold mb-2 text-center">Safe YouTube to MP3 Download</h3>
                 <p className="text-gray-700 text-center">
-                  We value user privacy and do not store your personal information or converted content, ensuring a safe and reliable experience.
+                  Our safe YouTube to MP3 converter requires no registration or software installation. Download YouTube to MP3 securely every time.
                 </p>
               </div>
-            </div> */}
-            <h2 className="text-2xl mb-8 ">Frequently Asked Questions About YouTube to MP3 Download</h2>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-center mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold mb-2 text-center">YouTube Video to MP3 Online</h3>
+                <p className="text-gray-700 text-center">
+                  Convert YouTube video to MP3 online without any software. Our YouTube to MP3 online converter works directly in your browser.
+                </p>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-center mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold mb-2 text-center">YouTube Music to MP3</h3>
+                <p className="text-gray-700 text-center">
+                  Download YouTube music to MP3 format on any device. Our YouTube to MP3 converter works on mobile, tablet, and desktop.
+                </p>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-center mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold mb-2 text-center">Free YouTube to MP3 Converter</h3>
+                <p className="text-gray-700 text-center">
+                  Our free YouTube to MP3 converter supports all video formats. Convert YouTube to MP3 free with no limits on file size or conversion time.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 新增 How to Use 部分 */}
+          <div className="mt-16" id="how-to">
+            <h2 className="text-2xl mb-8">How to Convert YouTube to MP3 Online</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 relative">
+                <div className="absolute -top-4 -left-4 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-bold text-lg">1</div>
+                <h3 className="text-lg font-semibold mb-3 mt-2">Copy YouTube Video URL</h3>
+                <p className="text-gray-700">
+                  Find your favorite YouTube video and copy the YouTube URL from your browser. Our YouTube to MP3 converter supports all YouTube video formats and links.
+                </p>
+                <div className="mt-4 bg-gray-50 p-3 rounded-md border border-gray-100">
+                  <code className="text-sm text-gray-600">https://www.youtube.com/watch?v=...</code>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 relative">
+                <div className="absolute -top-4 -left-4 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-bold text-lg">2</div>
+                <h3 className="text-lg font-semibold mb-3 mt-2">Paste & Convert YouTube to MP3</h3>
+                <p className="text-gray-700">
+                  Paste the YouTube link into our free YouTube to MP3 converter box above and click the &rdquo;Convert to MP3&rdquo; button to start the conversion process.
+                </p>
+                <div className="mt-4 flex justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 relative">
+                <div className="absolute -top-4 -left-4 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-bold text-lg">3</div>
+                <h3 className="text-lg font-semibold mb-3 mt-2">Download High Quality MP3</h3>
+                <p className="text-gray-700">
+                  Once the YouTube to MP3 conversion is complete, click the &rdquo;Download MP3&rdquo; button to save the 320kbps high-quality MP3 file to your device for offline listening.
+                </p>
+                <div className="mt-4 flex justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 新增 Why Choose Us 部分 */}
+          <div className="mt-16" id="why-choose">
+            <h2 className="text-2xl mb-8">Why Choose Our YouTube to MP3 Download Converter</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold mb-3 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  High Quality YouTube to MP3 Download
+                </h3>
+                <p className="text-gray-700">
+                  Our YouTube to MP3 download service provides 320kbps high-quality audio conversion, ensuring you get the best possible audio experience from YouTube videos with crystal-clear sound.
+                </p>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold mb-3 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  No Software Required for YouTube MP3 Download
+                </h3>
+                <p className="text-gray-700">
+                  Our web-based YouTube to MP3 download converter works directly in your browser, eliminating the need to download and install potentially risky software on your device.
+                </p>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold mb-3 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Privacy-Protected MP3 Download Service
+                </h3>
+                <p className="text-gray-700">
+                  We do not store your YouTube to MP3 download files or personal information. Once you download your MP3 file, it is immediately removed from our servers for complete privacy.
+                </p>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold mb-3 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Cross-Platform YouTube MP3 Download
+                </h3>
+                <p className="text-gray-700">
+                  Our YouTube to MP3 download converter supports all major platforms including Windows, Mac, iOS, and Android, allowing you to easily download YouTube MP3s on any device.
+                </p>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold mb-3 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  User-Friendly YouTube Download Interface
+                </h3>
+                <p className="text-gray-700">
+                  Our simple, intuitive design makes YouTube to MP3 download conversion quick and hassle-free, even for first-time users looking to download music from YouTube.
+                </p>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold mb-3 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Fast & Reliable MP3 Download Servers
+                </h3>
+                <p className="text-gray-700">
+                  Our powerful cloud infrastructure ensures quick processing times and reliable YouTube to MP3 download conversions, even during peak usage periods for consistent performance.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-2 pt-24 mb-4">
+            <h2 className="text-2xl mb-8">Frequently Asked Questions About YouTube to MP3 Download</h2>
             <div className="bg-gray-50 p-8 rounded-lg border border-gray-100">
               <div className="space-y-4">
                 {/* FAQ Item 1 */}
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  <button 
-                    className="w-full px-6 py-4 text-left bg-white hover:bg-gray-50 flex justify-between items-center transition-colors"
-                    onClick={(e) => {
-                      const content = e.currentTarget.nextElementSibling;
-                      if (content) {
-                        content.classList.toggle('hidden');
-                        const icon = e.currentTarget.querySelector('.faq-icon');
-                        if (icon) {
-                          icon.classList.toggle('rotate-180');
+                  <button
+                      className="w-full px-6 py-4 text-left bg-white hover:bg-gray-50 flex justify-between items-center transition-colors"
+                      onClick={(e) => {
+                        const content = e.currentTarget.nextElementSibling;
+                        if (content) {
+                          content.classList.toggle('hidden');
+                          const icon = e.currentTarget.querySelector('.faq-icon');
+                          if (icon) {
+                            icon.classList.toggle('rotate-180');
+                          }
                         }
-                      }
-                    }}
+                      }}
                   >
                     <h3 className="font-medium text-lg">How to download YouTube to MP3 in high quality?</h3>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 faq-icon transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -706,21 +661,21 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
-                
+
                 {/* FAQ Item 2 */}
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  <button 
-                    className="w-full px-6 py-4 text-left bg-white hover:bg-gray-50 flex justify-between items-center transition-colors"
-                    onClick={(e) => {
-                      const content = e.currentTarget.nextElementSibling;
-                      if (content) {
-                        content.classList.toggle('hidden');
-                        const icon = e.currentTarget.querySelector('.faq-icon');
-                        if (icon) {
-                          icon.classList.toggle('rotate-180');
+                  <button
+                      className="w-full px-6 py-4 text-left bg-white hover:bg-gray-50 flex justify-between items-center transition-colors"
+                      onClick={(e) => {
+                        const content = e.currentTarget.nextElementSibling;
+                        if (content) {
+                          content.classList.toggle('hidden');
+                          const icon = e.currentTarget.querySelector('.faq-icon');
+                          if (icon) {
+                            icon.classList.toggle('rotate-180');
+                          }
                         }
-                      }
-                    }}
+                      }}
                   >
                     <h3 className="font-medium text-lg">What is the quality of YouTube to MP3 downloads?</h3>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 faq-icon transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -742,21 +697,21 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
-                
+
                 {/* FAQ Item 3 */}
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  <button 
-                    className="w-full px-6 py-4 text-left bg-white hover:bg-gray-50 flex justify-between items-center transition-colors"
-                    onClick={(e) => {
-                      const content = e.currentTarget.nextElementSibling;
-                      if (content) {
-                        content.classList.toggle('hidden');
-                        const icon = e.currentTarget.querySelector('.faq-icon');
-                        if (icon) {
-                          icon.classList.toggle('rotate-180');
+                  <button
+                      className="w-full px-6 py-4 text-left bg-white hover:bg-gray-50 flex justify-between items-center transition-colors"
+                      onClick={(e) => {
+                        const content = e.currentTarget.nextElementSibling;
+                        if (content) {
+                          content.classList.toggle('hidden');
+                          const icon = e.currentTarget.querySelector('.faq-icon');
+                          if (icon) {
+                            icon.classList.toggle('rotate-180');
+                          }
                         }
-                      }
-                    }}
+                      }}
                   >
                     <h3 className="font-medium text-lg">How to download YouTube music to MP3 on iPhone?</h3>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 faq-icon transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -781,21 +736,21 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
-                
+
                 {/* FAQ Item 4 */}
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  <button 
-                    className="w-full px-6 py-4 text-left bg-white hover:bg-gray-50 flex justify-between items-center transition-colors"
-                    onClick={(e) => {
-                      const content = e.currentTarget.nextElementSibling;
-                      if (content) {
-                        content.classList.toggle('hidden');
-                        const icon = e.currentTarget.querySelector('.faq-icon');
-                        if (icon) {
-                          icon.classList.toggle('rotate-180');
+                  <button
+                      className="w-full px-6 py-4 text-left bg-white hover:bg-gray-50 flex justify-between items-center transition-colors"
+                      onClick={(e) => {
+                        const content = e.currentTarget.nextElementSibling;
+                        if (content) {
+                          content.classList.toggle('hidden');
+                          const icon = e.currentTarget.querySelector('.faq-icon');
+                          if (icon) {
+                            icon.classList.toggle('rotate-180');
+                          }
                         }
-                      }
-                    }}
+                      }}
                   >
                     <h3 className="font-medium text-lg">Is this YouTube to MP3 download converter safe to use?</h3>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 faq-icon transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -819,21 +774,21 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
-                
+
                 {/* FAQ Item 5 */}
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  <button 
-                    className="w-full px-6 py-4 text-left bg-white hover:bg-gray-50 flex justify-between items-center transition-colors"
-                    onClick={(e) => {
-                      const content = e.currentTarget.nextElementSibling;
-                      if (content) {
-                        content.classList.toggle('hidden');
-                        const icon = e.currentTarget.querySelector('.faq-icon');
-                        if (icon) {
-                          icon.classList.toggle('rotate-180');
+                  <button
+                      className="w-full px-6 py-4 text-left bg-white hover:bg-gray-50 flex justify-between items-center transition-colors"
+                      onClick={(e) => {
+                        const content = e.currentTarget.nextElementSibling;
+                        if (content) {
+                          content.classList.toggle('hidden');
+                          const icon = e.currentTarget.querySelector('.faq-icon');
+                          if (icon) {
+                            icon.classList.toggle('rotate-180');
+                          }
                         }
-                      }
-                    }}
+                      }}
                   >
                     <h3 className="font-medium text-lg">Can I download YouTube playlists to MP3?</h3>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 faq-icon transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -860,8 +815,9 @@ export default function Home() {
             </div>
           </div>
         </div>
-                      
-                {/* 添加页脚 */}
-      <Footer />
+
+        {/* 添加页脚 */}
+        <Footer />
       </div>
-      )}
+  );
+}
